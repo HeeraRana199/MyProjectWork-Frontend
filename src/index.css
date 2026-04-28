@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* these classes will work only during print */
+@media print {
+
+    /* zoom to 70% during print */
+    html{
+        zoom: 0.7;
+    }
+
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .page-break {
+        page-break-before: always;
+    }
+
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+}

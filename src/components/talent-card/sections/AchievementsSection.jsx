@@ -21,7 +21,8 @@ const AchievementsSection = ({ title, items }) => {
 
       {/* Achievements List */}
       <ul className="space-y-4">
-        {items.map((item) => {
+        {/* show only 4 */}
+        {items.slice(0, 3).map((item) => {
           const isAchievement = item.type === "ACHIEVEMENT";
 
           return (

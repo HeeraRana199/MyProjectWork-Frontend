@@ -13,11 +13,6 @@ function ScoreTrend() {
         <div className="flex items-center justify-center border rounded-lg h-48 text-gray-400">
 
             <Stack sx={{ width: '100%', height: 200 }}>
-            {/* <LineChart
-                xAxis={[{ data: xData, scaleType: 'point', height: 28 }]}
-                series={[{ data, showMark: true }]}
-                margin={margin}
-            /> */}
             <LineChart
                 xAxis={[{ data: xData, scaleType: 'point', height: 28 }]}
                 series={[{ data, connectNulls: true, showMark: true }]}

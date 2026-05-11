@@ -25,7 +25,7 @@ const CertificationsSection = ({ title, items }) => (
 
     {/* Certificates List */}
     <ul className="space-y-4">
-      {items.slice(0, 3).map((item, i) => {
+      {items.slice(0, 4).map((item, i) => {
 
         return (
           <li key={i} className="flex items-center justify-between border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition">
@@ -50,11 +50,11 @@ const CertificationsSection = ({ title, items }) => (
             <span
               className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold
                 ${
-                  item.status == false ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                  item.status == true ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
                 }`}
             >
-              {item.status == false ? <FcApproval /> : <FcSynchronize />}
-              {item.status == false ? `Verified` : `Pending`}
+              {item.status == true ? <FcApproval /> : <FcSynchronize />}
+              {item.status == true ? `Verified` : `Pending`}
             </span>
           </li>
         );

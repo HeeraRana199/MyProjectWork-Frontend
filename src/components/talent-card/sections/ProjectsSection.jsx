@@ -26,7 +26,7 @@ const ProjectsSection = ({ projects }) => {
   const p = projects[currentIndex];
 
   return (
-    <div className="bg-white rounded-xl shadow p-6">
+    <div className="bg-white rounded-xl shadow p-6 pb-2 min-h-[420px]">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-semibold mb-4 flex items-center gap-2">
@@ -43,7 +43,8 @@ const ProjectsSection = ({ projects }) => {
       <div className="border-t border-gray-300 mb-6" />
 
       {/* Carousel */}
-      <div className="relative">
+      {/* card at top and navigation at bottom */}
+      <div className="relative flex flex-col h-full">
         {/* Card */}
         <div className="flex border border-gray-200 p-5 rounded-xl gap-4 bg-gradient-to-r from-gray-50 to-white transition-all duration-300">
           <div className="rounded-xl flex items-center justify-center bg-blue-50 p-3">
@@ -60,7 +61,9 @@ const ProjectsSection = ({ projects }) => {
             <div className="flex flex-wrap gap-2 mt-2">
               <span className="text-sm font-medium">Outcome:</span>
               <span className="text-sm text-gray-600">
-                {p?.outcome || "Outcome Not Available"}
+                {(p?.outcome) ? 
+                  p.outcome.length>100 ? p.outcome.slice(0, 100)+" ..." : p.outcome 
+                : "Outcome Not Available"}
               </span>
             </div>
 
@@ -84,8 +87,8 @@ const ProjectsSection = ({ projects }) => {
           </div>
         </div>
 
-        {/* Navigation Arrows */}
-        <div className="flex items-center justify-between mt-6">
+        {/* Navigation Arrows - position sticky at bottom */}
+        <div className="absolute bottom-21 left-0 right-0 flex items-center justify-between mt-2 pt-0">
           <button
             onClick={prevProject}
             disabled={currentIndex === 0}

@@ -3,12 +3,10 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8085';
 
-// Get auth token from localStorage
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,
 });
 
-// Async thunk for getting candidate by ID
 export const getCandidateById = createAsyncThunk(
   'candidate/getById',
   async (id, { rejectWithValue }) => {
@@ -23,7 +21,6 @@ export const getCandidateById = createAsyncThunk(
   }
 );
 
-// Async thunk for updating skills
 export const updateSkills = createAsyncThunk(
   'candidate/updateSkills',
   async ({ candidateId, skills }, { rejectWithValue }) => {
@@ -38,7 +35,6 @@ export const updateSkills = createAsyncThunk(
   }
 );
 
-// Async thunk for adding certification
 export const addCertification = createAsyncThunk(
   'candidate/addCertification',
   async ({ certification, candidateId }, { rejectWithValue }) => {
@@ -53,7 +49,6 @@ export const addCertification = createAsyncThunk(
   }
 );
 
-// Async thunk for updating certification
 export const updateCertification = createAsyncThunk(
   'candidate/updateCertification',
   async ({ certification, certificationId }, { rejectWithValue }) => {
@@ -68,7 +63,6 @@ export const updateCertification = createAsyncThunk(
   }
 );
 
-// Async thunk for deleting certification
 export const deleteCertification = createAsyncThunk(
   'candidate/deleteCertification',
   async (certificationId, { rejectWithValue }) => {
@@ -83,7 +77,6 @@ export const deleteCertification = createAsyncThunk(
   }
 );
 
-// Async thunk for adding project
 export const addProject = createAsyncThunk(
   'candidate/addProject',
   async ({ project, candidateId }, { rejectWithValue }) => {
@@ -98,7 +91,6 @@ export const addProject = createAsyncThunk(
   }
 );
 
-// Async thunk for updating project
 export const updateProject = createAsyncThunk(
   'candidate/updateProject',
   async ({ project, projectId }, { rejectWithValue }) => {
@@ -113,7 +105,6 @@ export const updateProject = createAsyncThunk(
   }
 );
 
-// Async thunk for deleting project
 export const deleteProject = createAsyncThunk(
   'candidate/deleteProject',
   async (projectId, { rejectWithValue }) => {
@@ -128,7 +119,6 @@ export const deleteProject = createAsyncThunk(
   }
 );
 
-// Async thunk for adding achievement
 export const addAchievement = createAsyncThunk(
   'candidate/addAchievement',
   async ({ achievement, candidateId }, { rejectWithValue }) => {
@@ -143,7 +133,6 @@ export const addAchievement = createAsyncThunk(
   }
 );
 
-// Async thunk for updating achievement
 export const updateAchievement = createAsyncThunk(
   'candidate/updateAchievement',
   async ({ achievement, achievementId }, { rejectWithValue }) => {
@@ -158,7 +147,6 @@ export const updateAchievement = createAsyncThunk(
   }
 );
 
-// Async thunk for deleting achievement
 export const deleteAchievement = createAsyncThunk(
   'candidate/deleteAchievement',
   async (achievementId, { rejectWithValue }) => {
@@ -173,11 +161,28 @@ export const deleteAchievement = createAsyncThunk(
   }
 );
 
+// Helper to register pending/fulfilled/rejected for mutation thunks
+const addMutationCases = (builder, thunk) => {
+  builder
+    .addCase(thunk.pending, (state) => {
+      state.mutating = true;
+      state.error = null;
+    })
+    .addCase(thunk.fulfilled, (state) => {
+      state.mutating = false;
+    })
+    .addCase(thunk.rejected, (state, action) => {
+      state.mutating = false;
+      state.error = action.payload;
+    });
+};
+
 const candidateSlice = createSlice({
   name: 'candidate',
   initialState: {
     currentCandidate: null,
     loading: false,
+    mutating: false,
     error: null,
   },
   reducers: {
@@ -201,22 +206,18 @@ const candidateSlice = createSlice({
       .addCase(getCandidateById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      .addCase(updateSkills.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(updateSkills.fulfilled, (state, action) => {
-        state.loading = false;
-        // Update skills in current candidate if it exists
-        if (state.currentCandidate) {
-          state.currentCandidate.skills = action.payload;
-        }
-      })
-      .addCase(updateSkills.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
       });
+
+    addMutationCases(builder, updateSkills);
+    addMutationCases(builder, addProject);
+    addMutationCases(builder, updateProject);
+    addMutationCases(builder, deleteProject);
+    addMutationCases(builder, addCertification);
+    addMutationCases(builder, updateCertification);
+    addMutationCases(builder, deleteCertification);
+    addMutationCases(builder, addAchievement);
+    addMutationCases(builder, updateAchievement);
+    addMutationCases(builder, deleteAchievement);
   },
 });
 

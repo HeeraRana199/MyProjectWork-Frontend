@@ -9,7 +9,7 @@ import SkillsSection from '../components/talent-card/sections/SkillsSection';
 import StatCard from '../components/talent-card/performance_stats/StatCard';
 
 import { FcDoughnutChart, FcPrint } from 'react-icons/fc';
-import { MdEmail, MdOutlineFileDownload } from "react-icons/md";
+import { MdCircle, MdEmail, MdFeedback, MdOutlineFileDownload, MdAssessment, MdAccessTime, MdDoneAll } from "react-icons/md";
 import { FaLocationDot } from "react-icons/fa6";
 import { ImUser, ImUsers } from "react-icons/im";
 import CategoryScore from '../components/talent-card/performance_stats/CategoryScore';
@@ -17,6 +17,19 @@ import ScoreTrend from '../components/talent-card/performance_stats/ScoreTrend';
 import { FaCalendarAlt, FaCode } from 'react-icons/fa';
 import { useReactToPrint } from 'react-to-print';
 import AttendanceScore from '../components/talent-card/performance_stats/AttendanceScore';
+
+const getRAGConfig = (status) => {
+  switch (status) {
+    case 'GREEN':
+      return { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', dot: 'bg-green-500', label: 'On Track' };
+    case 'AMBER':
+      return { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Needs Attention' };
+    case 'RED':
+      return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', dot: 'bg-red-500', label: 'At Risk' };
+    default:
+      return { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-500', dot: 'bg-gray-400', label: 'Not Assessed' };
+  }
+};
 
 const AdminTalentCard = () => {
   const { candidateId } = useParams();
@@ -73,6 +86,7 @@ const AdminTalentCard = () => {
     gender,
     deploymentLocation,
     cohortCode,
+    doj,
     certificates = [],
     achievement = [],
     projects = [],
@@ -96,7 +110,7 @@ const AdminTalentCard = () => {
         <button 
           onClick={handleDownloadPDF}
           className="no-print font-medium flex items-center gap-1 bg-white border border-gray-300 px-2 py-1 cursor-pointer rounded shadow-sm text-sm"
-        >
+        > 
           <MdOutlineFileDownload color='blue' size="2em" /> Download PDF
         </button>
       </div>
@@ -128,7 +142,7 @@ const AdminTalentCard = () => {
             <p className="flex items-center gap-1"><ImUser size="1.25em" color='blue' /> Gender: {gender}</p>
             <p className="flex items-center gap-1"><ImUsers size="1.25em" color='blue' /> Cohort: {cohortCode}</p>
             <p className="flex items-center gap-1"><FaCode size="1.25em" color='blue' /> Track: {trackName}</p>
-            <p className="flex items-center gap-1"><FaCalendarAlt size="1.25em" color='blue' /> Training Since: {currentCandidate.trainingSince || ' Not specified'}</p>
+            <p className="flex items-center gap-1"><FaCalendarAlt size="1.25em" color='blue' /> Training Since: {currentCandidate.doj || ' Not specified'}</p>
           </div>
         </div>
 
@@ -153,16 +167,109 @@ const AdminTalentCard = () => {
         <AchievementsSection title="Achievements" items={achievement} icon="🏆" />
       </div>
 
-      {/* Performance Overview (UI Placeholder) */}
+      {/* Performance Overview */}
       <div className="bg-white rounded-xl shadow p-6 mb-8">
-        <h3 className="flex items-center gap-2 font-semibold mb-4"><FcDoughnutChart size="2em" />Performance Overview</h3>
+        <h3 className="flex items-center gap-2 font-semibold mb-4">
+          <FcDoughnutChart size="2em" />
+          Performance Overview
+        </h3>
 
         <div className="border-t border-gray-300 mb-8"></div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <AttendanceScore title="Overall Score" attendanceScore={candidateScore.attendanceScore} />
-          <CategoryScore title="Performance by Category" />
-          <ScoreTrend title="Score Trend"  languageScore={candidateScore.languageScore} />
+
+          {/* 1️⃣ Attendance Score + Language Score */}
+          <AttendanceScore
+            attendanceScore={candidateScore.attendanceScore}
+            languageScore={candidateScore.languageScore}
+          />
+
+          {/* 2️⃣ RAG Score */}
+          <div className="flex flex-col gap-3">
+            <h2 className="font-semibold flex items-center gap-2 text-gray-700">
+              <MdAssessment className="text-rose-500" size="1.3em" />
+              RAG Score
+            </h2>
+
+            {/* Interim RAG */}
+            {(() => {
+              const cfg = getRAGConfig(candidateScore.interimScore);
+              return (
+                <div className={`border ${cfg.border} ${cfg.bg} rounded-xl p-4 flex items-center justify-between`}>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1 flex items-center gap-1">
+                      <MdAccessTime size="1em" /> Interim Assessment
+                    </p>
+                    <span className={`flex items-center gap-2 font-bold text-base ${cfg.text}`}>
+                      <MdCircle size="0.8em" />
+                      {candidateScore.interimScore || 'N/A'}
+                    </span>
+                    <p className={`text-xs mt-0.5 ${cfg.text} opacity-75`}>{cfg.label}</p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold ${cfg.dot}`}>
+                    {candidateScore.interimScore?.[0] || '?'}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Final RAG */}
+            {(() => {
+              const cfg = getRAGConfig(candidateScore.finalScore);
+              return (
+                <div className={`border ${cfg.border} ${cfg.bg} rounded-xl p-4 flex items-center justify-between`}>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1 flex items-center gap-1">
+                      <MdDoneAll size="1em" /> Final Assessment
+                    </p>
+                    <span className={`flex items-center gap-2 font-bold text-base ${cfg.text}`}>
+                      <MdCircle size="0.8em" />
+                      {candidateScore.finalScore || 'N/A'}
+                    </span>
+                    <p className={`text-xs mt-0.5 ${cfg.text} opacity-75`}>{cfg.label}</p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold ${cfg.dot}`}>
+                    {candidateScore.finalScore?.[0] || '?'}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* 3️⃣ Evaluation Feedback */}
+          <div className="flex flex-col gap-3">
+            <h2 className="font-semibold flex items-center gap-2 text-gray-700">
+              <MdFeedback className="text-blue-500" size="1.3em" />
+              Evaluation Feedback
+            </h2>
+
+            {/* Interim Feedback */}
+            <div className="border border-sky-200 bg-sky-50 rounded-xl p-4 flex-1">
+              <div className="flex items-center gap-1.5 mb-2">
+                <MdAccessTime className="text-sky-500" size="1.1em" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-sky-600 bg-sky-100 px-2 py-0.5 rounded-full">
+                  Interim
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed line-clamp-4">
+                {candidateScore.interimEvaluationFeedback || 'No interim feedback available.'}
+              </p>
+            </div>
+
+            {/* Final Feedback */}
+            <div className="border border-indigo-200 bg-indigo-50 rounded-xl p-4 flex-1">
+              <div className="flex items-center gap-1.5 mb-2">
+                <MdDoneAll className="text-indigo-500" size="1.1em" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
+                  Final
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed line-clamp-4">
+                {candidateScore.finalEvaluationFeedback || 'No final evaluation feedback available.'}
+              </p>
+            </div>
+          </div>
+
         </div>
       </div>
 

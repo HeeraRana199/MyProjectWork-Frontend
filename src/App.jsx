@@ -4,6 +4,7 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminTalentCard from './pages/AdminTalentCard';
 import TraineeDashboard from './pages/TraineeDashboard';
+import LeaderDashboard from './pages/LeaderDashboard';
 
 const App = () => {
   return (
@@ -14,7 +15,7 @@ const App = () => {
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/talent-card/:candidateId" element={<AdminTalentCard />} />
       <Route path="/trainee/dashboard" element={<TraineeDashboard />} />
-      <Route path="/leader/dashboard" element={<div className="p-8"><h1>Leader Dashboard - Coming Soon</h1></div>} />
+      <Route path="/leader/dashboard" element={<LeaderDashboard />} />
     </Routes>
   );
 };

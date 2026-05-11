@@ -67,6 +67,28 @@ export const getAllCandidates = createAsyncThunk(
   }
 );
 
+// Async thunk for registering a new Leader (admin only)
+export const registerLeader = createAsyncThunk(
+  'admin/registerLeader',
+  async ({ email, password }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/admin/leaderRegister`,
+        { email, password },
+        { headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' } }
+      );
+      return response.data;
+    } catch (error) {
+      const data = error.response?.data;
+      const message =
+        typeof data === 'string'
+          ? data
+          : data?.message || 'Failed to register leader';
+      return rejectWithValue(message);
+    }
+  }
+);
+
 // Async thunk for getting candidate by ID (admin)
 export const getCandidateByIdAdmin = createAsyncThunk(
   'admin/getCandidateById',
@@ -88,6 +110,9 @@ const adminSlice = createSlice({
     candidates: [],
     uploadResult: null,
     currentCandidate: null,
+    leaderRegistrationResult: null,
+    leaderRegistrationError: null,
+    leaderRegistrationLoading: false,
     loading: false,
     error: null,
     pagination: {
@@ -107,6 +132,10 @@ const adminSlice = createSlice({
     },
     clearCurrentCandidate: (state) => {
       state.currentCandidate = null;
+    },
+    clearLeaderRegistration: (state) => {
+      state.leaderRegistrationResult = null;
+      state.leaderRegistrationError = null;
     },
   },
   extraReducers: (builder) => {
@@ -156,9 +185,22 @@ const adminSlice = createSlice({
       .addCase(getCandidateByIdAdmin.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(registerLeader.pending, (state) => {
+        state.leaderRegistrationLoading = true;
+        state.leaderRegistrationError = null;
+        state.leaderRegistrationResult = null;
+      })
+      .addCase(registerLeader.fulfilled, (state, action) => {
+        state.leaderRegistrationLoading = false;
+        state.leaderRegistrationResult = action.payload;
+      })
+      .addCase(registerLeader.rejected, (state, action) => {
+        state.leaderRegistrationLoading = false;
+        state.leaderRegistrationError = action.payload;
       });
   },
 });
 
-export const { clearError, clearUploadResult, clearCurrentCandidate } = adminSlice.actions;
+export const { clearError, clearUploadResult, clearCurrentCandidate, clearLeaderRegistration } = adminSlice.actions;
 export default adminSlice.reducer;

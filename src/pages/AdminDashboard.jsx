@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../store/slices/authSlice';
-import { getAllCandidates, uploadExcel } from '../store/slices/adminSlice';
-import { FcComboChart, FcConferenceCall, FcDocument, FcUpload } from 'react-icons/fc';
+import { getAllCandidates, uploadExcel, registerLeader, clearLeaderRegistration } from '../store/slices/adminSlice';
+import { FcComboChart, FcConferenceCall, FcDocument, FcUpload, FcBusinessman } from 'react-icons/fc';
+import { MdEmail, MdLock, MdVisibility, MdVisibilityOff, MdCheckCircle, MdError } from 'react-icons/md';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('upload');
@@ -37,6 +38,7 @@ const AdminDashboard = () => {
   const menuItems = [
     { id: 'upload', label: 'Upload Excel' },
     { id: 'trainees', label: 'All Trainees' },
+    { id: 'register-leader', label: 'Register Leader' },
     { id: 'logs', label: 'Ingestion Logs' },
   ];
 
@@ -58,6 +60,7 @@ const AdminDashboard = () => {
             >
                 {item.label === 'Upload Excel' && <FcUpload size="1.5em" />}
                 {item.label === 'All Trainees' && <FcConferenceCall size="1.5em" />}
+                {item.label === 'Register Leader' && <FcBusinessman size="1.5em" />}
                 {item.label === 'Ingestion Logs' && <FcComboChart size="1.5em" />}
               <p className='ml-3'>{item.label}</p>
             </button>
@@ -86,6 +89,7 @@ const AdminDashboard = () => {
             onPageChange={setCurrentPage}
           />
         )}
+        {activeTab === 'register-leader' && <RegisterLeader />}
         {activeTab === 'logs' && <IngestionLogs />}
       </div>
     </div>
@@ -305,6 +309,176 @@ const TraineesList = ({ candidates, loading, onViewTalentCard, pagination, curre
             Next
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// Register Leader Component — Admin creates a new Leader account with email + password
+const RegisterLeader = () => {
+  const dispatch = useDispatch();
+  const { leaderRegistrationLoading, leaderRegistrationError, leaderRegistrationResult } = useSelector(
+    (state) => state.admin
+  );
+
+  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [validationError, setValidationError] = useState('');
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearLeaderRegistration());
+    };
+  }, [dispatch]);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setValidationError('');
+    if (leaderRegistrationError || leaderRegistrationResult) {
+      dispatch(clearLeaderRegistration());
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setValidationError('');
+
+    const { email, password, confirmPassword } = formData;
+
+    if (!email || !password) {
+      setValidationError('Email and password are required.');
+      return;
+    }
+    if (password.length < 6) {
+      setValidationError('Password must be at least 6 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setValidationError('Passwords do not match.');
+      return;
+    }
+
+    const result = await dispatch(registerLeader({ email, password }));
+    if (result.meta.requestStatus === 'fulfilled') {
+      setFormData({ email: '', password: '', confirmPassword: '' });
+    }
+  };
+
+  return (
+    <div className="max-w-2xl">
+      <h3 className="text-2xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+        <FcBusinessman size="1.2em" /> Register Leader
+      </h3>
+      <p className="text-sm text-gray-500 mb-6">
+        Create a new Leader account. Leaders can search and filter candidates from the Leader Panel.
+      </p>
+
+      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Email */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+              <MdEmail className="text-indigo-500" size="1.1em" /> Leader Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="leader@cognizant.com"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+              <MdLock className="text-indigo-500" size="1.1em" /> Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                minLength={6}
+                placeholder="Minimum 6 characters"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <MdVisibilityOff size="1.3em" /> : <MdVisibility size="1.3em" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
+              <MdLock className="text-indigo-500" size="1.1em" /> Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                placeholder="Re-enter password"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((s) => !s)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+                aria-label={showConfirm ? 'Hide password' : 'Show password'}
+              >
+                {showConfirm ? <MdVisibilityOff size="1.3em" /> : <MdVisibility size="1.3em" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Validation / API error */}
+          {(validationError || leaderRegistrationError) && (
+            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+              <MdError className="text-red-500 mt-0.5 shrink-0" size="1.2em" />
+              <p className="text-sm text-red-700">
+                {validationError || leaderRegistrationError}
+              </p>
+            </div>
+          )}
+
+          {/* Success */}
+          {leaderRegistrationResult && (
+            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+              <MdCheckCircle className="text-green-600 mt-0.5 shrink-0" size="1.2em" />
+              <div className="text-sm text-green-700">
+                <p className="font-semibold">Leader registered successfully.</p>
+                <p className="text-xs mt-0.5">
+                  Email: <span className="font-medium">{leaderRegistrationResult.email}</span> · Role:{' '}
+                  <span className="font-medium">{leaderRegistrationResult.role}</span>
+                </p>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={leaderRegistrationLoading}
+            className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          >
+            {leaderRegistrationLoading ? 'Creating leader…' : 'Create Leader Account'}
+          </button>
+        </form>
       </div>
     </div>
   );

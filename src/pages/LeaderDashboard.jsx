@@ -12,7 +12,7 @@ import {
 } from '../store/slices/leaderSlice';
 import { FcConferenceCall, FcFilledFilter } from 'react-icons/fc';
 import ChangePasswordButton from '../components/ChangePasswordButton';
-import { FaCode, FaTools, FaLayerGroup, FaCertificate, FaUsers } from 'react-icons/fa';
+import { FaCode, FaTools, FaLayerGroup, FaCertificate, FaUsers, FaIdBadge } from 'react-icons/fa';
 import { FaLocationDot } from 'react-icons/fa6';
 import { MdClose, MdSearch, MdRestartAlt, MdFileDownload } from 'react-icons/md';
 
@@ -166,7 +166,8 @@ const FilterPanel = ({ filters, onAddSkill, onRemoveSkill, onSetField, onApply, 
     filters.frameworkSkills.length +
     (filters.certificate ? 1 : 0) +
     (filters.cohortCode ? 1 : 0) +
-    (filters.deploymentLocation ? 1 : 0);
+    (filters.deploymentLocation ? 1 : 0) +
+    (filters.candidateId ? 1 : 0);
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
@@ -186,6 +187,29 @@ const FilterPanel = ({ filters, onAddSkill, onRemoveSkill, onSetField, onApply, 
           <MdRestartAlt size="1.1em" /> Reset all
         </button>
       </div>
+
+      {/* Primary filter — quick lookup by Candidate ID */}
+      <div className="mb-5">
+        <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-1.5">
+          <FaIdBadge className="text-indigo-600" size="1.05em" /> Candidate ID
+          <span className="text-xs font-normal text-gray-400 ml-1">
+            (quick lookup — overrides all other filters)
+          </span>
+        </label>
+        <div className="relative">
+          <FaIdBadge className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size="1.1em" />
+          <input
+            type="text"
+            inputMode="numeric"
+            value={filters.candidateId}
+            onChange={(e) => onSetField('candidateId', e.target.value.replace(/[^0-9]/g, ''))}
+            placeholder="Enter Candidate ID (e.g. 200023)"
+            className="w-full border-2 border-indigo-200 rounded-lg pl-10 pr-3 py-3 text-base bg-indigo-50/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors placeholder:text-gray-400"
+          />
+        </div>
+      </div>
+
+      <div className="border-t border-gray-100 -mx-6 mb-5"></div>
 
       {/* Skills filter */}
       <div className="mb-5">
@@ -302,13 +326,14 @@ const FilterPanel = ({ filters, onAddSkill, onRemoveSkill, onSetField, onApply, 
   );
 };
 
-const FilterField = ({ icon, label, placeholder, value, onChange }) => (
+const FilterField = ({ icon, label, placeholder, value, onChange, inputMode }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
       {icon} {label}
     </label>
     <input
       type="text"
+      inputMode={inputMode}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}

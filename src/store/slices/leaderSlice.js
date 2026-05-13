@@ -9,6 +9,7 @@ const sanitizeFilters = (filters = {}) => ({
   certificate: sanitizeText(filters.certificate || ''),
   cohortCode: sanitizeText(filters.cohortCode || ''),
   deploymentLocation: sanitizeText(filters.deploymentLocation || ''),
+  candidateId: sanitizeText(filters.candidateId || '').replace(/[^0-9]/g, ''),
 });
 
 const API_BASE_URL = 'http://localhost:8085';
@@ -43,6 +44,7 @@ export const exportFilteredCandidates = createAsyncThunk(
       if (safe.certificate) params.append('certificate', safe.certificate);
       if (safe.cohortCode) params.append('cohortCode', safe.cohortCode);
       if (safe.deploymentLocation) params.append('deploymentLocation', safe.deploymentLocation);
+      if (safe.candidateId) params.append('candidateId', safe.candidateId);
 
       const response = await axios.get(
         `${API_BASE_URL}/leader/candidates/export?${params.toString()}`,
@@ -83,6 +85,7 @@ export const filterCandidates = createAsyncThunk(
       if (safe.certificate) params.append('certificate', safe.certificate);
       if (safe.cohortCode) params.append('cohortCode', safe.cohortCode);
       if (safe.deploymentLocation) params.append('deploymentLocation', safe.deploymentLocation);
+      if (safe.candidateId) params.append('candidateId', safe.candidateId);
       params.append('page', page);
       if (pageSize) params.append('pageSize', pageSize);
 
@@ -104,6 +107,7 @@ const initialFilters = {
   certificate: '',
   cohortCode: '',
   deploymentLocation: '',
+  candidateId: '',
 };
 
 const leaderSlice = createSlice({

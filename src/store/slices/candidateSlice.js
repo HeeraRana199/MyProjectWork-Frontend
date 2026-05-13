@@ -1,5 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { sanitizeObject } from '../../utils/sanitize';
+import {
+  validateSkills,
+  validateCertification,
+  validateProject,
+  validateAchievement,
+} from '../../utils/validate';
 
 const API_BASE_URL = 'http://localhost:8085';
 
@@ -24,8 +31,12 @@ export const getCandidateById = createAsyncThunk(
 export const updateSkills = createAsyncThunk(
   'candidate/updateSkills',
   async ({ candidateId, skills }, { rejectWithValue }) => {
+    const { valid, errors } = validateSkills(skills || {});
+    if (!valid) return rejectWithValue({ message: 'Invalid skills', errors });
+    const payload = sanitizeObject(skills);
+
     try {
-      const response = await axios.put(`${API_BASE_URL}/trainee/skill/${candidateId}`, skills, {
+      const response = await axios.put(`${API_BASE_URL}/trainee/skill/${candidateId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -38,8 +49,12 @@ export const updateSkills = createAsyncThunk(
 export const addCertification = createAsyncThunk(
   'candidate/addCertification',
   async ({ certification, candidateId }, { rejectWithValue }) => {
+    const { valid, errors } = validateCertification(certification || {});
+    if (!valid) return rejectWithValue({ message: 'Invalid certification', errors });
+    const payload = sanitizeObject(certification);
+
     try {
-      const response = await axios.post(`${API_BASE_URL}/trainee/certificate/${candidateId}`, certification, {
+      const response = await axios.post(`${API_BASE_URL}/trainee/certificate/${candidateId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -52,8 +67,20 @@ export const addCertification = createAsyncThunk(
 export const updateCertification = createAsyncThunk(
   'candidate/updateCertification',
   async ({ certification, certificationId }, { rejectWithValue }) => {
+    // PATCH semantics — only validate fields actually being sent
+    const partial = certification || {};
+    const errors = [];
+    if (partial.certificationName != null && String(partial.certificationName).trim() === '') {
+      errors.push('Certification name must not be blank');
+    }
+    if (partial.certificationProvider != null && String(partial.certificationProvider).trim() === '') {
+      errors.push('Certification provider must not be blank');
+    }
+    if (errors.length) return rejectWithValue({ message: 'Invalid certification update', errors });
+    const payload = sanitizeObject(certification);
+
     try {
-      const response = await axios.patch(`${API_BASE_URL}/trainee/certificate/${certificationId}`, certification, {
+      const response = await axios.patch(`${API_BASE_URL}/trainee/certificate/${certificationId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -80,8 +107,12 @@ export const deleteCertification = createAsyncThunk(
 export const addProject = createAsyncThunk(
   'candidate/addProject',
   async ({ project, candidateId }, { rejectWithValue }) => {
+    const { valid, errors } = validateProject(project || {});
+    if (!valid) return rejectWithValue({ message: 'Invalid project', errors });
+    const payload = sanitizeObject(project);
+
     try {
-      const response = await axios.post(`${API_BASE_URL}/trainee/project/${candidateId}`, project, {
+      const response = await axios.post(`${API_BASE_URL}/trainee/project/${candidateId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -94,8 +125,12 @@ export const addProject = createAsyncThunk(
 export const updateProject = createAsyncThunk(
   'candidate/updateProject',
   async ({ project, projectId }, { rejectWithValue }) => {
+    const { valid, errors } = validateProject(project || {});
+    if (!valid) return rejectWithValue({ message: 'Invalid project', errors });
+    const payload = sanitizeObject(project);
+
     try {
-      const response = await axios.put(`${API_BASE_URL}/trainee/project/${projectId}`, project, {
+      const response = await axios.put(`${API_BASE_URL}/trainee/project/${projectId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -122,8 +157,12 @@ export const deleteProject = createAsyncThunk(
 export const addAchievement = createAsyncThunk(
   'candidate/addAchievement',
   async ({ achievement, candidateId }, { rejectWithValue }) => {
+    const { valid, errors } = validateAchievement(achievement || {});
+    if (!valid) return rejectWithValue({ message: 'Invalid achievement', errors });
+    const payload = sanitizeObject(achievement);
+
     try {
-      const response = await axios.post(`${API_BASE_URL}/trainee/achievement/${candidateId}`, achievement, {
+      const response = await axios.post(`${API_BASE_URL}/trainee/achievement/${candidateId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -136,8 +175,12 @@ export const addAchievement = createAsyncThunk(
 export const updateAchievement = createAsyncThunk(
   'candidate/updateAchievement',
   async ({ achievement, achievementId }, { rejectWithValue }) => {
+    const { valid, errors } = validateAchievement(achievement || {});
+    if (!valid) return rejectWithValue({ message: 'Invalid achievement', errors });
+    const payload = sanitizeObject(achievement);
+
     try {
-      const response = await axios.put(`${API_BASE_URL}/trainee/achievement/${achievementId}`, achievement, {
+      const response = await axios.put(`${API_BASE_URL}/trainee/achievement/${achievementId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;

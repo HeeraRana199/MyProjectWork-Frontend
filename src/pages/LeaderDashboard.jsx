@@ -4,15 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { logout } from '../store/slices/authSlice';
 import {
   filterCandidates,
+  exportFilteredCandidates,
   addSkillChip,
   removeSkillChip,
   setFilterField,
   clearFilters,
 } from '../store/slices/leaderSlice';
 import { FcConferenceCall, FcFilledFilter } from 'react-icons/fc';
+import ChangePasswordButton from '../components/ChangePasswordButton';
 import { FaCode, FaTools, FaLayerGroup, FaCertificate, FaUsers } from 'react-icons/fa';
 import { FaLocationDot } from 'react-icons/fa6';
-import { MdClose, MdSearch, MdRestartAlt } from 'react-icons/md';
+import { MdClose, MdSearch, MdRestartAlt, MdFileDownload } from 'react-icons/md';
 
 const SKILL_TYPES = [
   { key: 'programmingSkills', label: 'Programming', Icon: FaCode, color: 'bg-blue-100 text-blue-700 border-blue-300', dot: 'bg-blue-500' },
@@ -25,7 +27,7 @@ const LeaderDashboard = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { candidates, filters, loading, pagination } = useSelector((state) => state.leader);
+  const { candidates, filters, loading, exporting, pagination } = useSelector((state) => state.leader);
   const { role } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -49,6 +51,10 @@ const LeaderDashboard = () => {
     dispatch(clearFilters());
     setCurrentPage(0);
     dispatch(filterCandidates({ filters: {}, page: 0 }));
+  };
+
+  const handleExportCSV = () => {
+    dispatch(exportFilteredCandidates({ filters }));
   };
 
   const handleLogout = () => {
@@ -83,10 +89,11 @@ const LeaderDashboard = () => {
             <p className="ml-3">All Candidates</p>
           </button>
         </nav>
-        <div className="absolute bottom-0 w-64 p-6">
+        <div className="absolute bottom-0 w-64 p-6 space-y-2 bg-white border-t border-gray-100">
+          <ChangePasswordButton panelLabel="Leader Panel" />
           <button
             onClick={handleLogout}
-            className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
+            className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors font-medium text-sm"
           >
             Logout
           </button>
@@ -95,9 +102,20 @@ const LeaderDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-8 overflow-y-auto">
-        <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <FcFilledFilter size="1.2em" /> Candidate Search & Filter
-        </h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <FcFilledFilter size="1.2em" /> Candidate Search & Filter
+          </h3>
+          <button
+            onClick={handleExportCSV}
+            disabled={exporting || candidates.length === 0}
+            title={candidates.length === 0 ? 'No candidates to export' : 'Download CSV of all matching candidates'}
+            className="flex items-center gap-1.5 bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          >
+            <MdFileDownload size="1.2em" />
+            {exporting ? 'Exporting…' : 'Export CSV'}
+          </button>
+        </div>
 
         <FilterPanel
           filters={filters}
@@ -115,7 +133,7 @@ const LeaderDashboard = () => {
           pagination={pagination}
           currentPage={currentPage}
           onPageChange={setCurrentPage}
-          onView={(id) => navigate(`/admin/talent-card/${id}`)}
+          onView={(id) => navigate(`/leader/talent-card/${id}`)}
         />
       </div>
     </div>

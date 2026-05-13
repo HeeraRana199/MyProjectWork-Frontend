@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { sanitizeObject } from '../../utils/sanitize';
+import { validateLeaderRegister } from '../../utils/validate';
 
 const API_BASE_URL = 'http://localhost:8085';
 
@@ -67,14 +69,35 @@ export const getAllCandidates = createAsyncThunk(
   }
 );
 
+// Async thunk for deleting a candidate (admin only)
+export const deleteCandidate = createAsyncThunk(
+  'admin/deleteCandidate',
+  async (candidateId, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/admin/candidate/${candidateId}`, {
+        headers: getAuthHeaders(),
+      });
+      return { candidateId, message: response.data };
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to delete candidate');
+    }
+  }
+);
+
 // Async thunk for registering a new Leader (admin only)
 export const registerLeader = createAsyncThunk(
   'admin/registerLeader',
   async ({ email, password }, { rejectWithValue }) => {
+    const { valid, errors } = validateLeaderRegister({ email, password });
+    if (!valid) {
+      return rejectWithValue(errors.join('; '));
+    }
+    const payload = { email: sanitizeObject(email), password };
+
     try {
       const response = await axios.post(
         `${API_BASE_URL}/admin/leaderRegister`,
-        { email, password },
+        payload,
         { headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' } }
       );
       return response.data;
@@ -198,6 +221,20 @@ const adminSlice = createSlice({
       .addCase(registerLeader.rejected, (state, action) => {
         state.leaderRegistrationLoading = false;
         state.leaderRegistrationError = action.payload;
+      })
+      .addCase(deleteCandidate.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteCandidate.fulfilled, (state, action) => {
+        state.loading = false;
+        state.candidates = state.candidates.filter(
+          (c) => c.cognizantCandidateId !== action.payload.candidateId
+        );
+      })
+      .addCase(deleteCandidate.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

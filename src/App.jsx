@@ -5,6 +5,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminTalentCard from './pages/AdminTalentCard';
 import TraineeDashboard from './pages/TraineeDashboard';
 import LeaderDashboard from './pages/LeaderDashboard';
+import LeaderTalentCard from './pages/LeaderTalentCard';
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
       <Route path="/admin/talent-card/:candidateId" element={<AdminTalentCard />} />
       <Route path="/trainee/dashboard" element={<TraineeDashboard />} />
       <Route path="/leader/dashboard" element={<LeaderDashboard />} />
+      <Route path="/leader/talent-card/:candidateId" element={<LeaderTalentCard />} />
     </Routes>
   );
 };

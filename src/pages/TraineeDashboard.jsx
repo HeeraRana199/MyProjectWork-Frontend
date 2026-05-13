@@ -11,6 +11,7 @@ import {
   clearError,
 } from '../store/slices/candidateSlice';
 import TraineeTalentCard from './TraineeTalentCard';
+import ChangePasswordButton from '../components/ChangePasswordButton';
 import {
   FcPortraitMode, FcBriefcase, FcIdea, FcGraduationCap, FcRating,
 } from 'react-icons/fc';
@@ -79,10 +80,11 @@ const TraineeDashboard = () => {
             </button>
           ))}
         </nav>
-        <div className="p-6 border-t border-gray-100">
+        <div className="p-6 border-t border-gray-100 space-y-2">
+          <ChangePasswordButton panelLabel="Trainee Panel" />
           <button
             onClick={handleLogout}
-            className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
+            className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors font-medium text-sm"
           >
             Logout
           </button>

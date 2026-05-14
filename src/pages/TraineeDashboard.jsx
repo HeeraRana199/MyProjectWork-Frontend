@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../store/slices/authSlice';
 import {
-  getCandidateById,
+  getAssociateById,
   addProject, updateProject, deleteProject,
   updateSkills,
   addCertification, updateCertification, deleteCertification,
@@ -26,7 +26,7 @@ const TraineeDashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { role, candidateId } = useSelector((state) => state.auth);
+  const { role, associateId } = useSelector((state) => state.auth);
   const { currentCandidate, loading } = useSelector((state) => state.candidate);
 
   useEffect(() => {
@@ -34,8 +34,8 @@ const TraineeDashboard = () => {
   }, [role, navigate]);
 
   useEffect(() => {
-    if (candidateId) dispatch(getCandidateById(parseInt(candidateId)));
-  }, [candidateId, dispatch]);
+    if (associateId) dispatch(getAssociateById(parseInt(associateId)));
+  }, [associateId, dispatch]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -43,7 +43,7 @@ const TraineeDashboard = () => {
   };
 
   const refreshCandidate = () => {
-    if (candidateId) dispatch(getCandidateById(parseInt(candidateId)));
+    if (associateId) dispatch(getAssociateById(parseInt(associateId)));
   };
 
   const sidebarItems = [
@@ -94,11 +94,11 @@ const TraineeDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {activeSection === 'myTalentCard' && (
-          <TraineeTalentCard candidateIdOverride={candidateId} />
+          <TraineeTalentCard candidateIdOverride={associateId} />
         )}
         {activeSection === 'projects' && (
           <ProjectsPanel
-            candidateId={parseInt(candidateId)}
+            candidateId={parseInt(associateId)}
             projects={currentCandidate?.projects || []}
             loading={loading}
             onRefresh={refreshCandidate}
@@ -106,7 +106,7 @@ const TraineeDashboard = () => {
         )}
         {activeSection === 'skills' && (
           <SkillsPanel
-            candidateId={parseInt(candidateId)}
+            candidateId={parseInt(associateId)}
             skills={currentCandidate?.skills}
             loading={loading}
             onRefresh={refreshCandidate}
@@ -114,7 +114,7 @@ const TraineeDashboard = () => {
         )}
         {activeSection === 'certificates' && (
           <CertificatesPanel
-            candidateId={parseInt(candidateId)}
+            candidateId={parseInt(associateId)}
             certificates={currentCandidate?.certificates || []}
             loading={loading}
             onRefresh={refreshCandidate}
@@ -122,7 +122,7 @@ const TraineeDashboard = () => {
         )}
         {activeSection === 'achievements' && (
           <AchievementsPanel
-            candidateId={parseInt(candidateId)}
+            candidateId={parseInt(associateId)}
             achievements={currentCandidate?.achievement || []}
             loading={loading}
             onRefresh={refreshCandidate}
@@ -228,7 +228,7 @@ const ErrorBanner = ({ message }) =>
 // ─────────────────────────────────────────────
 // Projects Panel
 // ─────────────────────────────────────────────
-const ProjectsPanel = ({ candidateId, projects, loading, onRefresh }) => {
+const ProjectsPanel = ({ associateId, projects, loading, onRefresh }) => {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const dispatch = useDispatch();
@@ -237,7 +237,7 @@ const ProjectsPanel = ({ candidateId, projects, loading, onRefresh }) => {
   const closeModal = () => { setShowModal(false); setEditItem(null); dispatch(clearError()); };
 
   const handleAdd = async (data) => {
-    const res = await dispatch(addProject({ project: data, candidateId }));
+    const res = await dispatch(addProject({ project: data, associateId: parseInt(associateId) }));
     if (res.meta.requestStatus === 'fulfilled') { onRefresh(); closeModal(); }
   };
 
@@ -337,7 +337,7 @@ const ProjectModal = ({ project, error, mutating, onSave, onClose }) => {
 // ─────────────────────────────────────────────
 // Skills Panel
 // ─────────────────────────────────────────────
-const SkillsPanel = ({ candidateId, skills, loading, onRefresh }) => {
+const SkillsPanel = ({ associateId, skills, loading, onRefresh }) => {
   const [form, setForm] = useState({
     programmings: '',
     frameworks: '',
@@ -359,7 +359,7 @@ const SkillsPanel = ({ candidateId, skills, loading, onRefresh }) => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    const res = await dispatch(updateSkills({ candidateId, skills: form }));
+    const res = await dispatch(updateSkills({ associateId: parseInt(associateId), skills: form }));
     if (res.meta.requestStatus === 'fulfilled') {
       setSaved(true);
       onRefresh();
@@ -422,7 +422,7 @@ const SkillsPanel = ({ candidateId, skills, loading, onRefresh }) => {
 // ─────────────────────────────────────────────
 // Certificates Panel
 // ─────────────────────────────────────────────
-const CertificatesPanel = ({ candidateId, certificates, loading, onRefresh }) => {
+const CertificatesPanel = ({ associateId, certificates, loading, onRefresh }) => {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const dispatch = useDispatch();
@@ -431,7 +431,7 @@ const CertificatesPanel = ({ candidateId, certificates, loading, onRefresh }) =>
   const closeModal = () => { setShowModal(false); setEditItem(null); dispatch(clearError()); };
 
   const handleAdd = async (data) => {
-    const res = await dispatch(addCertification({ certification: data, candidateId }));
+    const res = await dispatch(addCertification({ certification: data, associateId: parseInt(associateId) }));
     if (res.meta.requestStatus === 'fulfilled') { onRefresh(); closeModal(); }
   };
 
@@ -549,7 +549,7 @@ const CertificateModal = ({ certificate, error, mutating, onSave, onClose }) => 
 // ─────────────────────────────────────────────
 // Achievements Panel
 // ─────────────────────────────────────────────
-const AchievementsPanel = ({ candidateId, achievements, loading, onRefresh }) => {
+const AchievementsPanel = ({ associateId, achievements, loading, onRefresh }) => {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const dispatch = useDispatch();
@@ -558,7 +558,7 @@ const AchievementsPanel = ({ candidateId, achievements, loading, onRefresh }) =>
   const closeModal = () => { setShowModal(false); setEditItem(null); dispatch(clearError()); };
 
   const handleAdd = async (data) => {
-    const res = await dispatch(addAchievement({ achievement: data, candidateId }));
+    const res = await dispatch(addAchievement({ achievement: data, associateId: parseInt(associateId) }));
     if (res.meta.requestStatus === 'fulfilled') { onRefresh(); closeModal(); }
   };
 

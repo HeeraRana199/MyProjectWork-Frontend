@@ -391,7 +391,7 @@ const TraineesList = ({ candidates, loading, onViewTalentCard, onDeleteCandidate
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
-    await onDeleteCandidate(deleteTarget.cognizantCandidateId);
+    await onDeleteCandidate(deleteTarget.associateId);
     setDeleteTarget(null);
   };
 
@@ -455,7 +455,7 @@ const TraineesList = ({ candidates, loading, onViewTalentCard, onDeleteCandidate
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => onViewTalentCard(candidate.cognizantCandidateId)}
+                        onClick={() => onViewTalentCard(candidate.associateId)}
                         className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md hover:bg-indigo-100"
                       >
                         View Talent Card

@@ -19,15 +19,17 @@ export const login = createAsyncThunk(
 
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/login`, payload);
-      const { token, role, candidateId } = response.data;
+      console.log('Login response:', response.data);
+      const { token, role, associateId } = response.data;
 
       // Store token in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
-      localStorage.setItem('candidateId', candidateId?.toString());
+      localStorage.setItem('associateId', associateId?.toString());
 
       return response.data;
     } catch (error) {
+      console.error('Login error:', error.response || error);
       return rejectWithValue(error.response?.data || 'Login failed');
     }
   }

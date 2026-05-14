@@ -14,7 +14,7 @@ const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,
 });
 
-export const getCandidateById = createAsyncThunk(
+export const getAssociateById = createAsyncThunk(
   'candidate/getById',
   async (id, { rejectWithValue }) => {
     try {
@@ -30,13 +30,13 @@ export const getCandidateById = createAsyncThunk(
 
 export const updateSkills = createAsyncThunk(
   'candidate/updateSkills',
-  async ({ candidateId, skills }, { rejectWithValue }) => {
+  async ({ associateId, skills }, { rejectWithValue }) => {
     const { valid, errors } = validateSkills(skills || {});
     if (!valid) return rejectWithValue({ message: 'Invalid skills', errors });
     const payload = sanitizeObject(skills);
 
     try {
-      const response = await axios.put(`${API_BASE_URL}/trainee/skill/${candidateId}`, payload, {
+      const response = await axios.put(`${API_BASE_URL}/trainee/skill/${associateId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -48,13 +48,13 @@ export const updateSkills = createAsyncThunk(
 
 export const addCertification = createAsyncThunk(
   'candidate/addCertification',
-  async ({ certification, candidateId }, { rejectWithValue }) => {
+  async ({ certification, associateId }, { rejectWithValue }) => {
     const { valid, errors } = validateCertification(certification || {});
     if (!valid) return rejectWithValue({ message: 'Invalid certification', errors });
     const payload = sanitizeObject(certification);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/trainee/certificate/${candidateId}`, payload, {
+      const response = await axios.post(`${API_BASE_URL}/trainee/certificate/${associateId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -106,13 +106,13 @@ export const deleteCertification = createAsyncThunk(
 
 export const addProject = createAsyncThunk(
   'candidate/addProject',
-  async ({ project, candidateId }, { rejectWithValue }) => {
+  async ({ project, associateId }, { rejectWithValue }) => {
     const { valid, errors } = validateProject(project || {});
     if (!valid) return rejectWithValue({ message: 'Invalid project', errors });
     const payload = sanitizeObject(project);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/trainee/project/${candidateId}`, payload, {
+      const response = await axios.post(`${API_BASE_URL}/trainee/project/${associateId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -156,13 +156,13 @@ export const deleteProject = createAsyncThunk(
 
 export const addAchievement = createAsyncThunk(
   'candidate/addAchievement',
-  async ({ achievement, candidateId }, { rejectWithValue }) => {
+  async ({ achievement, associateId }, { rejectWithValue }) => {
     const { valid, errors } = validateAchievement(achievement || {});
     if (!valid) return rejectWithValue({ message: 'Invalid achievement', errors });
     const payload = sanitizeObject(achievement);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/trainee/achievement/${candidateId}`, payload, {
+      const response = await axios.post(`${API_BASE_URL}/trainee/achievement/${associateId}`, payload, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -238,15 +238,15 @@ const candidateSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getCandidateById.pending, (state) => {
+      .addCase(getAssociateById.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(getCandidateById.fulfilled, (state, action) => {
+      .addCase(getAssociateById.fulfilled, (state, action) => {
         state.loading = false;
         state.currentCandidate = action.payload;
       })
-      .addCase(getCandidateById.rejected, (state, action) => {
+      .addCase(getAssociateById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

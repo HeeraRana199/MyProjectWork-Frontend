@@ -50,8 +50,8 @@ const StatusCard = ({ Icon, title, value }) => {
         </span>
       </div>
       <div className={`flex items-center gap-2 ${cfg.text}`}>
-        <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-        <span className="font-semibold text-sm">{cfg.label}</span>
+        {/* <span className={`w-2 h-2 rounded-full ${cfg.dot}`} /> */}
+        {/* <span className="font-semibold text-sm">{cfg.label}</span> */}
       </div>
     </div>
   );
@@ -66,7 +66,7 @@ const StatusCard = ({ Icon, title, value }) => {
  *
  * Pure presentational: parent owns data fetching and passes `candidate`.
  */
-const TalentCard = ({ role, candidateId, candidate, loading, error, onBack }) => {
+const TalentCard = ({ role, associateId, candidate, loading, error, onBack }) => {
   const pdfRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -74,7 +74,7 @@ const TalentCard = ({ role, candidateId, candidate, loading, error, onBack }) =>
 
   const handleDownloadPDF = useReactToPrint({
     contentRef: pdfRef,
-    documentTitle: candidate ? `${candidateId}_Talent_Card` : 'Talent_Card',
+    documentTitle: candidate ? `${associateId}_Talent_Card` : 'Talent_Card',
     removeAfterPrint: true,
   });
 
@@ -83,13 +83,13 @@ const TalentCard = ({ role, candidateId, candidate, loading, error, onBack }) =>
     if (!file) return;
     const formData = new FormData();
     formData.append('file', file);
-    await fetch(`${PHOTO_BASE_URL}/${candidateId}`, {
+    await fetch(`${PHOTO_BASE_URL}/${associateId}`, {
       method: 'POST',
       body: formData,
     });
     // Bust the browser cache for the newly uploaded photo
-    const img = document.getElementById(`profile-photo-${candidateId}`);
-    if (img) img.src = `${PHOTO_BASE_URL}/${candidateId}?t=${Date.now()}`;
+    const img = document.getElementById(`profile-photo-${associateId}`);
+    if (img) img.src = `${PHOTO_BASE_URL}/${associateId}?t=${Date.now()}`;
   };
 
   if (loading) {
@@ -154,8 +154,8 @@ const TalentCard = ({ role, candidateId, candidate, loading, error, onBack }) =>
       <div className="bg-white rounded-xl shadow p-6 flex gap-6 mb-8">
         <div className="relative">
           <img
-            id={`profile-photo-${candidateId}`}
-            src={`${PHOTO_BASE_URL}/${candidateId}`}
+            id={`profile-photo-${associateId}`}
+            src={`${PHOTO_BASE_URL}/${associateId}`}
             alt="profile"
             className="w-32 h-39 rounded-xl object-cover"
             onError={(e) => {
@@ -186,7 +186,7 @@ const TalentCard = ({ role, candidateId, candidate, loading, error, onBack }) =>
         <div className="flex-1">
           <h2 className="text-2xl font-semibold flex items-center gap-3">
             {candidateName}
-            <span className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-full">Active</span>
+            {/* <span className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-full">Active</span> */}
           </h2>
           <p className="text-gray-600 mt-2">{trackName}</p>
           <div className="grid grid-cols-2 gap-y-4 gap-x-6 mt-6 text-sm border-t border-gray-500 pt-4">

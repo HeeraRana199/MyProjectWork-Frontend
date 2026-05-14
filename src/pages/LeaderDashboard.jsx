@@ -385,7 +385,7 @@ const CandidatesTable = ({ candidates, loading, pagination, currentPage, onPageC
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.deploymentLocation}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
-                      onClick={() => onView(c.cognizantCandidateId)}
+                      onClick={() => onView(c.associateId)}
                       className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md hover:bg-indigo-100"
                     >
                       View Talent Card

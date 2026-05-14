@@ -167,7 +167,7 @@ const FilterPanel = ({ filters, onAddSkill, onRemoveSkill, onSetField, onApply, 
     (filters.certificate ? 1 : 0) +
     (filters.cohortCode ? 1 : 0) +
     (filters.deploymentLocation ? 1 : 0) +
-    (filters.candidateId ? 1 : 0);
+    (filters.associateId ? 1 : 0);
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
@@ -188,10 +188,10 @@ const FilterPanel = ({ filters, onAddSkill, onRemoveSkill, onSetField, onApply, 
         </button>
       </div>
 
-      {/* Primary filter — quick lookup by Candidate ID */}
+      {/* Primary filter — quick lookup by Associate ID */}
       <div className="mb-5">
         <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-1.5">
-          <FaIdBadge className="text-indigo-600" size="1.05em" /> Candidate ID
+          <FaIdBadge className="text-indigo-600" size="1.05em" /> Associate ID
           <span className="text-xs font-normal text-gray-400 ml-1">
             (quick lookup — overrides all other filters)
           </span>
@@ -201,9 +201,9 @@ const FilterPanel = ({ filters, onAddSkill, onRemoveSkill, onSetField, onApply, 
           <input
             type="text"
             inputMode="numeric"
-            value={filters.candidateId}
-            onChange={(e) => onSetField('candidateId', e.target.value.replace(/[^0-9]/g, ''))}
-            placeholder="Enter Candidate ID (e.g. 200023)"
+            value={filters.associateId}
+            onChange={(e) => onSetField('associateId', e.target.value.replace(/[^0-9]/g, ''))}
+            placeholder="Enter Associate ID (e.g. 200023)"
             className="w-full border-2 border-indigo-200 rounded-lg pl-10 pr-3 py-3 text-base bg-indigo-50/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors placeholder:text-gray-400"
           />
         </div>
@@ -376,8 +376,8 @@ const CandidatesTable = ({ candidates, loading, pagination, currentPage, onPageC
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {candidates.map((c) => (
-                <tr key={c.cognizantCandidateId} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.cognizantCandidateId}</td>
+                <tr key={c.associateId} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.associateId}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{c.candidateName}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.cognizantEmailID}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.trackName}</td>

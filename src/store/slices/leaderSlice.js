@@ -9,7 +9,7 @@ const sanitizeFilters = (filters = {}) => ({
   certificate: sanitizeText(filters.certificate || ''),
   cohortCode: sanitizeText(filters.cohortCode || ''),
   deploymentLocation: sanitizeText(filters.deploymentLocation || ''),
-  candidateId: sanitizeText(filters.candidateId || '').replace(/[^0-9]/g, ''),
+  associateId: sanitizeText(filters.associateId || '').replace(/[^0-9]/g, ''),
 });
 
 const API_BASE_URL = 'http://localhost:8085';
@@ -18,7 +18,7 @@ const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,
 });
 
-export const getCandidateByIdLeader = createAsyncThunk(
+export const getAssociateByIdLeader = createAsyncThunk(
   'leader/getCandidateById',
   async (id, { rejectWithValue }) => {
     try {
@@ -44,7 +44,7 @@ export const exportFilteredCandidates = createAsyncThunk(
       if (safe.certificate) params.append('certificate', safe.certificate);
       if (safe.cohortCode) params.append('cohortCode', safe.cohortCode);
       if (safe.deploymentLocation) params.append('deploymentLocation', safe.deploymentLocation);
-      if (safe.candidateId) params.append('candidateId', safe.candidateId);
+      if (safe.associateId) params.append('associateId', safe.associateId);
 
       const response = await axios.get(
         `${API_BASE_URL}/leader/candidates/export?${params.toString()}`,
@@ -85,7 +85,7 @@ export const filterCandidates = createAsyncThunk(
       if (safe.certificate) params.append('certificate', safe.certificate);
       if (safe.cohortCode) params.append('cohortCode', safe.cohortCode);
       if (safe.deploymentLocation) params.append('deploymentLocation', safe.deploymentLocation);
-      if (safe.candidateId) params.append('candidateId', safe.candidateId);
+      if (safe.associateId) params.append('associateId', safe.associateId);
       params.append('page', page);
       if (pageSize) params.append('pageSize', pageSize);
 
@@ -107,7 +107,7 @@ const initialFilters = {
   certificate: '',
   cohortCode: '',
   deploymentLocation: '',
-  candidateId: '',
+  associateId: '',
 };
 
 const leaderSlice = createSlice({
@@ -176,15 +176,15 @@ const leaderSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(getCandidateByIdLeader.pending, (state) => {
+      .addCase(getAssociateByIdLeader.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(getCandidateByIdLeader.fulfilled, (state, action) => {
+      .addCase(getAssociateByIdLeader.fulfilled, (state, action) => {
         state.loading = false;
         state.currentCandidate = action.payload;
       })
-      .addCase(getCandidateByIdLeader.rejected, (state, action) => {
+      .addCase(getAssociateByIdLeader.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

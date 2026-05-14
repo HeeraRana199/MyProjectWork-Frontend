@@ -94,11 +94,11 @@ const TraineeDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {activeSection === 'myTalentCard' && (
-          <TraineeTalentCard candidateIdOverride={associateId} />
+          <TraineeTalentCard associateIdOverride={associateId} />
         )}
         {activeSection === 'projects' && (
           <ProjectsPanel
-            candidateId={parseInt(associateId)}
+            associateId={parseInt(associateId)}
             projects={currentCandidate?.projects || []}
             loading={loading}
             onRefresh={refreshCandidate}
@@ -106,7 +106,7 @@ const TraineeDashboard = () => {
         )}
         {activeSection === 'skills' && (
           <SkillsPanel
-            candidateId={parseInt(associateId)}
+            associateId={parseInt(associateId)}
             skills={currentCandidate?.skills}
             loading={loading}
             onRefresh={refreshCandidate}
@@ -114,7 +114,7 @@ const TraineeDashboard = () => {
         )}
         {activeSection === 'certificates' && (
           <CertificatesPanel
-            candidateId={parseInt(associateId)}
+            associateId={parseInt(associateId)}
             certificates={currentCandidate?.certificates || []}
             loading={loading}
             onRefresh={refreshCandidate}
@@ -122,7 +122,7 @@ const TraineeDashboard = () => {
         )}
         {activeSection === 'achievements' && (
           <AchievementsPanel
-            candidateId={parseInt(associateId)}
+            associateId={parseInt(associateId)}
             achievements={currentCandidate?.achievement || []}
             loading={loading}
             onRefresh={refreshCandidate}

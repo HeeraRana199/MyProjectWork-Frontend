@@ -72,12 +72,12 @@ export const getAllCandidates = createAsyncThunk(
 // Async thunk for deleting a candidate (admin only)
 export const deleteCandidate = createAsyncThunk(
   'admin/deleteCandidate',
-  async (candidateId, { rejectWithValue }) => {
+  async (associateId, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/admin/candidate/${candidateId}`, {
+      const response = await axios.delete(`${API_BASE_URL}/admin/candidate/${associateId}`, {
         headers: getAuthHeaders(),
       });
-      return { candidateId, message: response.data };
+      return { associateId, message: response.data };
     } catch (error) {
       return rejectWithValue(error.response?.data || 'Failed to delete candidate');
     }
@@ -113,7 +113,7 @@ export const registerLeader = createAsyncThunk(
 );
 
 // Async thunk for getting candidate by ID (admin)
-export const getCandidateByIdAdmin = createAsyncThunk(
+export const getAssociateByIdAdmin = createAsyncThunk(
   'admin/getCandidateById',
   async (id, { rejectWithValue }) => {
     try {
@@ -197,15 +197,15 @@ const adminSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(getCandidateByIdAdmin.pending, (state) => {
+      .addCase(getAssociateByIdAdmin.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(getCandidateByIdAdmin.fulfilled, (state, action) => {
+      .addCase(getAssociateByIdAdmin.fulfilled, (state, action) => {
         state.loading = false;
         state.currentCandidate = action.payload;
       })
-      .addCase(getCandidateByIdAdmin.rejected, (state, action) => {
+      .addCase(getAssociateByIdAdmin.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -229,7 +229,7 @@ const adminSlice = createSlice({
       .addCase(deleteCandidate.fulfilled, (state, action) => {
         state.loading = false;
         state.candidates = state.candidates.filter(
-          (c) => c.cognizantCandidateId !== action.payload.candidateId
+          (c) => c.associateId !== action.payload.associateId
         );
       })
       .addCase(deleteCandidate.rejected, (state, action) => {

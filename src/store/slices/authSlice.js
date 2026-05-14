@@ -126,7 +126,7 @@ const authSlice = createSlice({
     user: null,
     token: localStorage.getItem('token'),
     role: localStorage.getItem('role'),
-    candidateId: localStorage.getItem('candidateId'),
+    associateId: localStorage.getItem('associateId'),
     loading: false,
     error: null,
     passwordChangeLoading: false,
@@ -138,10 +138,10 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.role = null;
-      state.candidateId = null;
+      state.associateId = null;
       localStorage.removeItem('token');
       localStorage.removeItem('role');
-      localStorage.removeItem('candidateId');
+      localStorage.removeItem('associateId');
     },
     clearError: (state) => {
       state.error = null;
@@ -162,7 +162,7 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.token = action.payload.token;
         state.role = action.payload.role;
-        state.candidateId = action.payload.candidateId;
+        state.associateId = action.payload.associateId;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;

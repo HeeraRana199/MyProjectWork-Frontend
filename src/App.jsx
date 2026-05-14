@@ -14,10 +14,10 @@ const App = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/admin/talent-card/:candidateId" element={<AdminTalentCard />} />
+      <Route path="/admin/talent-card/:associateId" element={<AdminTalentCard />} />
       <Route path="/trainee/dashboard" element={<TraineeDashboard />} />
       <Route path="/leader/dashboard" element={<LeaderDashboard />} />
-      <Route path="/leader/talent-card/:candidateId" element={<LeaderTalentCard />} />
+      <Route path="/leader/talent-card/:associateId" element={<LeaderTalentCard />} />
     </Routes>
   );
 };

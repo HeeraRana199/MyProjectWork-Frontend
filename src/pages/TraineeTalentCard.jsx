@@ -4,11 +4,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getAssociateById } from '../store/slices/candidateSlice';
 import TalentCard from '../components/talent-card/TalentCard';
 
-// When candidateIdOverride is provided the component is embedded in the Trainee Dashboard.
+// When associateIdOverride is provided the component is embedded in the Trainee Dashboard.
 // When used standalone via route, it falls back to useParams.
-const TraineeTalentCard = ({ candidateIdOverride }) => {
-  const { associateId: paramCandidateId } = useParams();
-  const associateId = candidateIdOverride || paramCandidateId;
+const TraineeTalentCard = ({ associateIdOverride }) => {
+  const { associateId: paramAssociateId } = useParams();
+  const associateId = associateIdOverride || paramAssociateId;
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const TraineeTalentCard = ({ candidateIdOverride }) => {
       candidate={currentCandidate}
       loading={loading}
       error={error}
-      onBack={candidateIdOverride ? undefined : () => navigate('/trainee/dashboard')}
+      onBack={associateIdOverride ? undefined : () => navigate('/trainee/dashboard')}
     />
   );
 };

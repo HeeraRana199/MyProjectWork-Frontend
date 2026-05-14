@@ -1,25 +1,25 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCandidateByIdLeader } from '../store/slices/leaderSlice';
+import { getAssociateByIdLeader } from '../store/slices/leaderSlice';
 import TalentCard from '../components/talent-card/TalentCard';
 
 const LeaderTalentCard = () => {
-  const { candidateId } = useParams();
+  const { associateId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentCandidate, loading, error } = useSelector((state) => state.leader);
 
   useEffect(() => {
-    if (candidateId) {
-      dispatch(getCandidateByIdLeader(parseInt(candidateId)));
+    if (associateId) {
+      dispatch(getAssociateByIdLeader(parseInt(associateId)));
     }
-  }, [candidateId, dispatch]);
+  }, [associateId, dispatch]);
 
   return (
     <TalentCard
       role="leader"
-      candidateId={candidateId}
+      associateId={associateId}
       candidate={currentCandidate}
       loading={loading}
       error={error}

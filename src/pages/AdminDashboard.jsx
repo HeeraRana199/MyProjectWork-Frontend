@@ -33,12 +33,12 @@ const AdminDashboard = () => {
     navigate('/login');
   };
 
-  const handleViewTalentCard = (candidateId) => {
-    navigate(`/admin/talent-card/${candidateId}`);
+  const handleViewTalentCard = (associateId) => {
+    navigate(`/admin/talent-card/${associateId}`);
   };
 
-  const handleDeleteCandidate = async (candidateId) => {
-    const result = await dispatch(deleteCandidate(candidateId));
+  const handleDeleteCandidate = async (associateId) => {
+    const result = await dispatch(deleteCandidate(associateId));
     if (result.meta.requestStatus === 'fulfilled') {
       // Refetch in case the current page is now empty / pagination shifted
       dispatch(getAllCandidates({ page: currentPage }));
@@ -439,9 +439,9 @@ const TraineesList = ({ candidates, loading, onViewTalentCard, onDeleteCandidate
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {candidates.map((candidate) => (
-                <tr key={candidate.cognizantCandidateId} className="hover:bg-gray-50">
+                <tr key={candidate.associateId} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {candidate.cognizantCandidateId}
+                    {candidate.associateId}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {candidate.candidateName}
@@ -526,7 +526,7 @@ const TraineesList = ({ candidates, loading, onViewTalentCard, onDeleteCandidate
                 <h4 className="font-semibold text-gray-900 text-lg">Delete Talent Card?</h4>
                 <p className="text-sm text-gray-600 mt-1">
                   This will permanently delete <span className="font-medium">{deleteTarget.candidateName}</span>{' '}
-                  (ID {deleteTarget.cognizantCandidateId}) and all associated skills, projects, certifications,
+                  (Associate ID {deleteTarget.associateId}) and all associated skills, projects, certifications,
                   achievements, and scores. This action cannot be undone.
                 </p>
               </div>

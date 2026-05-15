@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../store/slices/authSlice';
-import { getAllCandidates, uploadExcel, registerLeader, clearLeaderRegistration, deleteCandidate } from '../store/slices/adminSlice';
+import { getAllCandidates, uploadExcel, registerLeader, clearLeaderRegistration, deleteCandidate, getIngestionLogs, getIngestionLogDetails, clearIngestionLogDetails } from '../store/slices/adminSlice';
 import { FcComboChart, FcConferenceCall, FcDocument, FcUpload, FcBusinessman } from 'react-icons/fc';
-import { MdEmail, MdLock, MdVisibility, MdVisibilityOff, MdCheckCircle, MdError, MdDelete, MdWarning, MdCloudUpload, MdClose, MdListAlt, MdAddCircleOutline, MdSync, MdBlock } from 'react-icons/md';
+import { MdEmail, MdLock, MdVisibility, MdVisibilityOff, MdCheckCircle, MdError, MdDelete, MdWarning, MdCloudUpload, MdClose, MdListAlt, MdAddCircleOutline, MdSync, MdBlock, MdRefresh, MdSchema, MdReportProblem, MdInfoOutline, MdAccessTime } from 'react-icons/md';
 import { FaFileExcel } from 'react-icons/fa';
 import ChangePasswordButton from '../components/ChangePasswordButton';
 
@@ -722,16 +722,324 @@ const RegisterLeader = () => {
   );
 };
 
-// Ingestion Logs Component (placeholder)
+// ─────────────────────────────────────────────────────────────────────────────
+// Ingestion Logs — list of every upload attempt with drill-down on failure
+// ─────────────────────────────────────────────────────────────────────────────
+const formatLogTime = (iso) => {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
+};
+
+const statusBadge = (status) => {
+  switch (status) {
+    case 'SUCCESS':
+      return { text: 'Success', cls: 'bg-emerald-100 text-emerald-700 border-emerald-200', Icon: MdCheckCircle };
+    case 'PARTIAL':
+      return { text: 'Partial', cls: 'bg-amber-100 text-amber-700 border-amber-200', Icon: MdWarning };
+    case 'FAILED':
+      return { text: 'Failed', cls: 'bg-red-100 text-red-700 border-red-200', Icon: MdError };
+    default:
+      return { text: status || 'Unknown', cls: 'bg-gray-100 text-gray-600 border-gray-200', Icon: MdInfoOutline };
+  }
+};
+
 const IngestionLogs = () => {
+  const dispatch = useDispatch();
+  const { ingestionLogs, ingestionLogsLoading, ingestionLogDetails, ingestionLogDetailsLoading } =
+    useSelector((state) => state.admin);
+  const [openLogId, setOpenLogId] = useState(null);
+
+  useEffect(() => {
+    dispatch(getIngestionLogs());
+  }, [dispatch]);
+
+  const openDetails = (id) => {
+    setOpenLogId(id);
+    dispatch(getIngestionLogDetails(id));
+  };
+
+  const closeDetails = () => {
+    setOpenLogId(null);
+    dispatch(clearIngestionLogDetails());
+  };
+
   return (
-    <div className="max-w-4xl">
-      <h3 className="text-2xl font-bold text-gray-900 mb-6">Ingestion Logs</h3>
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <p className="text-gray-600">Ingestion logs feature coming soon...</p>
+    <div className="max-w-6xl">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <FcComboChart size="1.2em" /> Ingestion Logs
+        </h3>
+        <button
+          onClick={() => dispatch(getIngestionLogs())}
+          disabled={ingestionLogsLoading}
+          className="flex items-center gap-1.5 text-sm font-medium border border-gray-300 rounded-md px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50"
+          title="Refresh"
+        >
+          <MdRefresh size="1.1em" /> Refresh
+        </button>
+      </div>
+
+      {ingestionLogsLoading ? (
+        <div className="bg-white rounded-xl shadow-md p-12 text-center text-gray-500">
+          Loading ingestion logs…
+        </div>
+      ) : ingestionLogs.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-md p-12 text-center text-gray-500">
+          <MdInfoOutline size="2.5em" className="mx-auto mb-2 text-gray-300" />
+          <p>No upload attempts yet.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">File</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Uploaded At</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Saved</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Merged</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Rejected</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {ingestionLogs.map((log) => {
+                const b = statusBadge(log.status);
+                const StatusIcon = b.Icon;
+                return (
+                  <tr key={log.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <FaFileExcel className="text-emerald-600 shrink-0" />
+                        <span className="font-medium truncate max-w-[260px]" title={log.fileName}>
+                          {log.fileName}
+                        </span>
+                      </div>
+                      {log.uploadedBy && (
+                        <p className="text-xs text-gray-400 mt-0.5 ml-6">by {log.uploadedBy}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1">
+                        <MdAccessTime size="1em" className="text-gray-400" />
+                        {formatLogTime(log.uploadedAt)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${b.cls}`}>
+                        <StatusIcon size="1em" />
+                        {b.text}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700 text-right">{log.totalRecords}</td>
+                    <td className="px-4 py-3 text-sm text-emerald-700 text-right font-medium">{log.savedRecords}</td>
+                    <td className="px-4 py-3 text-sm text-amber-700 text-right font-medium">{log.mergedRecords}</td>
+                    <td className="px-4 py-3 text-sm text-rose-700 text-right font-medium">{log.rejectedRecords}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {log.status === 'SUCCESS' ? (
+                        <span className="text-xs text-gray-400">No issues</span>
+                      ) : (
+                        <button
+                          onClick={() => openDetails(log.id)}
+                          className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md text-xs font-medium"
+                        >
+                          <MdInfoOutline size="1.1em" /> View Reason
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Drill-down modal */}
+      {openLogId && (
+        <IngestionLogDetailsModal
+          loading={ingestionLogDetailsLoading}
+          payload={ingestionLogDetails}
+          onClose={closeDetails}
+        />
+      )}
+    </div>
+  );
+};
+
+const IngestionLogDetailsModal = ({ loading, payload, onClose }) => {
+  const log = payload?.log;
+  const errors = payload?.errors || [];
+
+  // Partition errors into schema vs data vs processing for clearer presentation
+  const schemaErrors = errors.filter((e) => e.errorType === 'SCHEMA');
+  const dataErrors = errors.filter((e) => e.errorType === 'DATA');
+  const processingErrors = errors.filter((e) => e.errorType === 'PROCESSING');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between p-5 border-b border-gray-100">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <MdReportProblem className="text-rose-500" size="1.3em" /> Upload Failure Details
+            </h3>
+            {log && (
+              <p className="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1"><FaFileExcel className="text-emerald-600" /> {log.fileName}</span>
+                <span>•</span>
+                <span>{formatLogTime(log.uploadedAt)}</span>
+                {log.uploadedBy && <><span>•</span><span>by {log.uploadedBy}</span></>}
+              </p>
+            )}
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close">
+            <MdClose size="1.5em" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 overflow-y-auto flex-1 space-y-5">
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Loading details…</div>
+          ) : (
+            <>
+              {log && (
+                <div className="grid grid-cols-4 gap-3">
+                  <SummaryStat label="Total" value={log.totalRecords} color="text-blue-700 bg-blue-50 border-blue-200" />
+                  <SummaryStat label="Saved" value={log.savedRecords} color="text-emerald-700 bg-emerald-50 border-emerald-200" />
+                  <SummaryStat label="Merged" value={log.mergedRecords} color="text-amber-700 bg-amber-50 border-amber-200" />
+                  <SummaryStat label="Rejected" value={log.rejectedRecords} color="text-rose-700 bg-rose-50 border-rose-200" />
+                </div>
+              )}
+
+              {schemaErrors.length > 0 && (
+                <ErrorGroup
+                  title="Schema validation — missing column(s)"
+                  Icon={MdSchema}
+                  iconClass="text-rose-600"
+                  containerClass="border-rose-200 bg-rose-50"
+                >
+                  <ul className="text-sm text-rose-900 space-y-1">
+                    {schemaErrors.map((e) => (
+                      <li key={e.id} className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        <span className="font-medium">{e.columnName || '—'}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </ErrorGroup>
+              )}
+
+              {dataErrors.length > 0 && (
+                <ErrorGroup
+                  title={`Data validation — ${dataErrors.length} row${dataErrors.length > 1 ? 's' : ''} rejected`}
+                  Icon={MdReportProblem}
+                  iconClass="text-amber-600"
+                  containerClass="border-amber-200 bg-amber-50"
+                >
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs uppercase text-amber-900/70">
+                          <th className="py-1.5 pr-3">Row</th>
+                          <th className="py-1.5 pr-3">Associate ID</th>
+                          <th className="py-1.5 pr-3">Name</th>
+                          <th className="py-1.5 pr-3">Failing Column(s)</th>
+                          <th className="py-1.5">Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-amber-200/60">
+                        {dataErrors.map((e) => (
+                          <tr key={e.id} className="text-amber-900">
+                            <td className="py-1.5 pr-3 align-top font-mono text-xs">{e.rowNumber ?? '—'}</td>
+                            <td className="py-1.5 pr-3 align-top">{e.associateId ?? '—'}</td>
+                            <td className="py-1.5 pr-3 align-top">{e.candidateName ?? '—'}</td>
+                            <td className="py-1.5 pr-3 align-top">
+                              {e.columnName ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {e.columnName.split(',').map((c) => (
+                                    <span key={c} className="text-xs bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded">
+                                      {c.trim()}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : '—'}
+                            </td>
+                            <td className="py-1.5 align-top text-xs">{e.errorReason}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </ErrorGroup>
+              )}
+
+              {processingErrors.length > 0 && (
+                <ErrorGroup
+                  title="Unexpected processing errors"
+                  Icon={MdError}
+                  iconClass="text-red-600"
+                  containerClass="border-red-200 bg-red-50"
+                >
+                  <ul className="text-sm text-red-900 space-y-1">
+                    {processingErrors.map((e) => (
+                      <li key={e.id}>
+                        {e.rowNumber ? `Row ${e.rowNumber}: ` : ''}
+                        {e.errorReason}
+                      </li>
+                    ))}
+                  </ul>
+                </ErrorGroup>
+              )}
+
+              {schemaErrors.length === 0 && dataErrors.length === 0 && processingErrors.length === 0 && !loading && (
+                <div className="text-center py-8 text-gray-500">No detailed errors recorded.</div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-gray-100 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
 };
+
+const SummaryStat = ({ label, value, color }) => (
+  <div className={`rounded-lg border p-2.5 text-center ${color}`}>
+    <p className="text-xs font-semibold uppercase tracking-wide opacity-80">{label}</p>
+    <p className="text-xl font-bold mt-0.5">{value ?? 0}</p>
+  </div>
+);
+
+const ErrorGroup = ({ title, Icon, iconClass, containerClass, children }) => (
+  <div className={`rounded-lg border ${containerClass} p-4`}>
+    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+      <Icon className={iconClass} size="1.2em" />
+      {title}
+    </h4>
+    {children}
+  </div>
+);
 
 export default AdminDashboard;

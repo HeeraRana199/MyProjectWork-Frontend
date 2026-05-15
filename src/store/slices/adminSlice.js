@@ -112,6 +112,35 @@ export const registerLeader = createAsyncThunk(
   }
 );
 
+// ── Ingestion Logs ────────────────────────────────────────────────────────────
+export const getIngestionLogs = createAsyncThunk(
+  'admin/getIngestionLogs',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/admin/ingestion-logs`, {
+        headers: getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to fetch ingestion logs');
+    }
+  }
+);
+
+export const getIngestionLogDetails = createAsyncThunk(
+  'admin/getIngestionLogDetails',
+  async (logId, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/admin/ingestion-logs/${logId}`, {
+        headers: getAuthHeaders(),
+      });
+      return response.data; // { log: {...}, errors: [...] }
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to fetch ingestion log details');
+    }
+  }
+);
+
 // Async thunk for getting candidate by ID (admin)
 export const getAssociateByIdAdmin = createAsyncThunk(
   'admin/getCandidateById',
@@ -136,6 +165,10 @@ const adminSlice = createSlice({
     leaderRegistrationResult: null,
     leaderRegistrationError: null,
     leaderRegistrationLoading: false,
+    ingestionLogs: [],
+    ingestionLogsLoading: false,
+    ingestionLogDetails: null,
+    ingestionLogDetailsLoading: false,
     loading: false,
     error: null,
     pagination: {
@@ -159,6 +192,9 @@ const adminSlice = createSlice({
     clearLeaderRegistration: (state) => {
       state.leaderRegistrationResult = null;
       state.leaderRegistrationError = null;
+    },
+    clearIngestionLogDetails: (state) => {
+      state.ingestionLogDetails = null;
     },
   },
   extraReducers: (builder) => {
@@ -235,9 +271,30 @@ const adminSlice = createSlice({
       .addCase(deleteCandidate.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(getIngestionLogs.pending, (state) => {
+        state.ingestionLogsLoading = true;
+      })
+      .addCase(getIngestionLogs.fulfilled, (state, action) => {
+        state.ingestionLogsLoading = false;
+        state.ingestionLogs = action.payload || [];
+      })
+      .addCase(getIngestionLogs.rejected, (state) => {
+        state.ingestionLogsLoading = false;
+      })
+      .addCase(getIngestionLogDetails.pending, (state) => {
+        state.ingestionLogDetailsLoading = true;
+        state.ingestionLogDetails = null;
+      })
+      .addCase(getIngestionLogDetails.fulfilled, (state, action) => {
+        state.ingestionLogDetailsLoading = false;
+        state.ingestionLogDetails = action.payload;
+      })
+      .addCase(getIngestionLogDetails.rejected, (state) => {
+        state.ingestionLogDetailsLoading = false;
       });
   },
 });
 
-export const { clearError, clearUploadResult, clearCurrentCandidate, clearLeaderRegistration } = adminSlice.actions;
+export const { clearError, clearUploadResult, clearCurrentCandidate, clearLeaderRegistration, clearIngestionLogDetails } = adminSlice.actions;
 export default adminSlice.reducer;

@@ -11,10 +11,11 @@ import AttendanceScore from './performance_stats/AttendanceScore';
 import { FcDoughnutChart } from 'react-icons/fc';
 import {
   MdAccessTime, MdAssessment, MdDoneAll, MdEmail, MdFeedback, MdOutlineFileDownload, MdVerified,
+  MdPhotoCamera,
 } from 'react-icons/md';
 import { FaLocationDot } from 'react-icons/fa6';
 import { ImUser, ImUsers } from 'react-icons/im';
-import { FaCalendarAlt, FaCode, FaPlus } from 'react-icons/fa';
+import { FaCalendarAlt, FaCode } from 'react-icons/fa';
 
 const PHOTO_BASE_URL = 'http://localhost:8085/trainee/profile-photo';
 
@@ -152,7 +153,7 @@ const TalentCard = ({ role, associateId, candidate, loading, error, onBack }) =>
 
       {/* Profile Card */}
       <div className="bg-white rounded-xl shadow p-6 flex gap-6 mb-8">
-        <div className="relative">
+        <div className="relative group w-32 h-39 shrink-0">
           <img
             id={`profile-photo-${associateId}`}
             src={`${PHOTO_BASE_URL}/${associateId}`}
@@ -164,14 +165,30 @@ const TalentCard = ({ role, associateId, candidate, loading, error, onBack }) =>
           />
           {canUploadPhoto && (
             <>
+              {/* Hover-to-change overlay covering the whole photo */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="no-print absolute bottom-1 right-1 bg-blue-600 text-white p-2 rounded-full shadow hover:bg-blue-700"
+                className="no-print absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer"
                 aria-label="Change profile photo"
               >
-                <FaPlus size={12} />
+                <div className="flex flex-col items-center gap-1 text-white">
+                  <MdPhotoCamera size={28} />
+                  <span className="text-xs font-semibold tracking-wide">Change Photo</span>
+                </div>
               </button>
+
+              {/* Always-visible camera badge — clearly signals uploadability */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="no-print absolute -bottom-2 -right-2 bg-indigo-600 text-white w-10 h-10 rounded-full shadow-lg ring-4 ring-white hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all duration-150 flex items-center justify-center"
+                aria-label="Upload profile photo"
+                title="Upload / change profile photo"
+              >
+                <MdPhotoCamera size={20} />
+              </button>
+
               <input
                 ref={fileInputRef}
                 type="file"

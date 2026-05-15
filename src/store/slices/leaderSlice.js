@@ -9,7 +9,13 @@ const sanitizeFilters = (filters = {}) => ({
   certificate: sanitizeText(filters.certificate || ''),
   cohortCode: sanitizeText(filters.cohortCode || ''),
   deploymentLocation: sanitizeText(filters.deploymentLocation || ''),
-  associateId: sanitizeText(filters.associateId || '').replace(/[^0-9]/g, ''),
+  // Multi-value chip filter — accepts an array of strings, strips non-digits
+  // per chip, drops blanks/dupes.
+  associateId: Array.from(new Set(
+    (Array.isArray(filters.associateId) ? filters.associateId : [])
+      .map((v) => sanitizeText(String(v)).replace(/[^0-9]/g, ''))
+      .filter((v) => v.length > 0)
+  )),
 });
 
 const API_BASE_URL = 'http://localhost:8085';
@@ -44,7 +50,7 @@ export const exportFilteredCandidates = createAsyncThunk(
       if (safe.certificate) params.append('certificate', safe.certificate);
       if (safe.cohortCode) params.append('cohortCode', safe.cohortCode);
       if (safe.deploymentLocation) params.append('deploymentLocation', safe.deploymentLocation);
-      if (safe.associateId) params.append('associateId', safe.associateId);
+      safe.associateId.forEach((id) => params.append('associateId', id));
 
       const response = await axios.get(
         `${API_BASE_URL}/leader/candidates/export?${params.toString()}`,
@@ -85,7 +91,7 @@ export const filterCandidates = createAsyncThunk(
       if (safe.certificate) params.append('certificate', safe.certificate);
       if (safe.cohortCode) params.append('cohortCode', safe.cohortCode);
       if (safe.deploymentLocation) params.append('deploymentLocation', safe.deploymentLocation);
-      if (safe.associateId) params.append('associateId', safe.associateId);
+      safe.associateId.forEach((id) => params.append('associateId', id));
       params.append('page', page);
       if (pageSize) params.append('pageSize', pageSize);
 
@@ -107,7 +113,7 @@ const initialFilters = {
   certificate: '',
   cohortCode: '',
   deploymentLocation: '',
-  associateId: '',
+  associateId: [],
 };
 
 const leaderSlice = createSlice({

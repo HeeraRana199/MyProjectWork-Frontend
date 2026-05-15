@@ -146,6 +146,21 @@ const LeaderDashboard = () => {
 const FilterPanel = ({ filters, onAddSkill, onRemoveSkill, onSetField, onApply, onClear, loading }) => {
   const [skillType, setSkillType] = useState('programmingSkills');
   const [skillInput, setSkillInput] = useState('');
+  const [associateIdInput, setAssociateIdInput] = useState('');
+
+  const handleAddAssociateId = () => {
+    const v = associateIdInput.trim();
+    if (!v) return;
+    onAddSkill('associateId', v);
+    setAssociateIdInput('');
+  };
+
+  const handleAssociateIdKey = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddAssociateId();
+    }
+  };
 
   const handleAddSkill = () => {
     if (!skillInput.trim()) return;
@@ -167,7 +182,7 @@ const FilterPanel = ({ filters, onAddSkill, onRemoveSkill, onSetField, onApply, 
     (filters.certificate ? 1 : 0) +
     (filters.cohortCode ? 1 : 0) +
     (filters.deploymentLocation ? 1 : 0) +
-    (filters.associateId ? 1 : 0);
+    filters.associateId.length;
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
@@ -188,25 +203,58 @@ const FilterPanel = ({ filters, onAddSkill, onRemoveSkill, onSetField, onApply, 
         </button>
       </div>
 
-      {/* Primary filter — quick lookup by Associate ID */}
+      {/* Primary filter — quick lookup by Associate ID(s) */}
       <div className="mb-5">
         <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-1.5">
           <FaIdBadge className="text-indigo-600" size="1.05em" /> Associate ID
           <span className="text-xs font-normal text-gray-400 ml-1">
-            (quick lookup — overrides all other filters)
+            (add one or more — press Enter to add, finds any of them)
           </span>
         </label>
-        <div className="relative">
-          <FaIdBadge className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size="1.1em" />
-          <input
-            type="text"
-            inputMode="numeric"
-            value={filters.associateId}
-            onChange={(e) => onSetField('associateId', e.target.value.replace(/[^0-9]/g, ''))}
-            placeholder="Enter Associate ID (e.g. 200023)"
-            className="w-full border-2 border-indigo-200 rounded-lg pl-10 pr-3 py-3 text-base bg-indigo-50/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors placeholder:text-gray-400"
-          />
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <FaIdBadge className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size="1.1em" />
+            <input
+              type="text"
+              inputMode="numeric"
+              value={associateIdInput}
+              onChange={(e) => setAssociateIdInput(e.target.value.replace(/[^0-9]/g, ''))}
+              onKeyDown={handleAssociateIdKey}
+              placeholder="Enter Associate ID and press Enter (e.g. 200023)"
+              className="w-full border-2 border-indigo-200 rounded-lg pl-10 pr-3 py-3 text-base bg-indigo-50/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors placeholder:text-gray-400"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleAddAssociateId}
+            className="bg-indigo-600 text-white px-5 rounded-lg font-medium hover:bg-indigo-700"
+          >
+            Add
+          </button>
         </div>
+
+        {/* Chips */}
+        {filters.associateId.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {filters.associateId.map((id) => (
+              <span
+                key={id}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold bg-indigo-100 text-indigo-700 border border-indigo-300 rounded-full px-3 py-1"
+              >
+                <FaIdBadge className="text-indigo-500" size="0.9em" />
+                {id}
+                <button
+                  type="button"
+                  onClick={() => onRemoveSkill('associateId', id)}
+                  className="hover:text-red-600"
+                  aria-label={`Remove ${id}`}
+                >
+                  <MdClose size="1em" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="border-t border-gray-100 -mx-6 mb-5"></div>

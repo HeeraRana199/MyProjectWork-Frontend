@@ -23,7 +23,7 @@ const AdminTalentCard = () => {
       candidate={currentCandidate}
       loading={loading}
       error={error}
-      onBack={() => navigate('/admin/dashboard')}
+      onBack={() => navigate(-1)}
     />
   );
 };

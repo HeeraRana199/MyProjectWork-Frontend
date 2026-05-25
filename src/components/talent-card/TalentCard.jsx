@@ -11,7 +11,7 @@ import AttendanceScore from './performance_stats/AttendanceScore';
 import { FcDoughnutChart } from 'react-icons/fc';
 import {
   MdAccessTime, MdAssessment, MdDoneAll, MdEmail, MdFeedback, MdOutlineFileDownload, MdVerified,
-  MdPhotoCamera,
+  MdPhotoCamera, MdArrowBack,
 } from 'react-icons/md';
 import { FaLocationDot } from 'react-icons/fa6';
 import { ImUser, ImUsers } from 'react-icons/im';
@@ -134,14 +134,28 @@ const TalentCard = ({ role, associateId, candidate, loading, error, onBack }) =>
     <div ref={pdfRef} className="print-container min-h-screen bg-blue-50 px-6 py-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <img src="/icons/medal.png" className="pt-2" alt="medal" width={39} />
-            Trainee Talent Card
-          </h1>
-          <p className="text-sm text-gray-500 ml-10 pl-2">
-            Comprehensive overview of trainee profile and performance
-          </p>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="no-print flex items-center gap-1 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-indigo-700 hover:border-indigo-400 px-3 py-2 rounded-md shadow-sm text-sm font-medium transition-colors"
+              aria-label="Back to dashboard"
+              title="Back to dashboard"
+            >
+              <MdArrowBack size="1.2em" />
+              Back
+            </button>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <img src="/icons/medal.png" className="pt-2" alt="medal" width={39} />
+              Trainee Talent Card
+            </h1>
+            <p className="text-sm text-gray-500 ml-10 pl-2">
+              Comprehensive overview of trainee profile and performance
+            </p>
+          </div>
         </div>
         <button
           onClick={handleDownloadPDF}
@@ -166,7 +180,7 @@ const TalentCard = ({ role, associateId, candidate, loading, error, onBack }) =>
           {canUploadPhoto && (
             <>
               {/* Hover-to-change overlay covering the whole photo */}
-              <button
+              {/* <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="no-print absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer"
@@ -176,7 +190,7 @@ const TalentCard = ({ role, associateId, candidate, loading, error, onBack }) =>
                   <MdPhotoCamera size={28} />
                   <span className="text-xs font-semibold tracking-wide">Change Photo</span>
                 </div>
-              </button>
+              </button> */}
 
               {/* Always-visible camera badge — clearly signals uploadability */}
               <button

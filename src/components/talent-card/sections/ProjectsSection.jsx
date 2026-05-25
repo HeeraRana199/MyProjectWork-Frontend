@@ -53,8 +53,7 @@ const ProjectsSection = ({ projects }) => {
 
           <div className="flex-1">
             <h4 className="font-semibold text-lg">
-              {/* conditional */}
-              {p?.projectName || "Project Title Not Available"}
+              {p?.projectName || "Project Title : N/A"}
             </h4>
 
             {/* Outcome */}
@@ -63,25 +62,31 @@ const ProjectsSection = ({ projects }) => {
               <span className="text-sm text-gray-600">
                 {(p?.outcome) ? 
                   p.outcome.length>100 ? p.outcome.slice(0, 100)+" ..." : p.outcome 
-                : "Outcome Not Available"}
+                // : "Outcome Not Available"}
+                : "N/A"}
               </span>
             </div>
 
             {/* Technology */}
             <div className="flex flex-wrap gap-2 mt-3">
               <span className="text-sm font-medium">Technology:</span>
-              {p?.tech?.split(",")?.map((t, idx) => (
-                <span key={idx} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
-                  {t.trim()}
-                </span>
-              ))}
+              {p?.tech && p.tech.trim() ? (
+                p.tech.split(",").map((t, idx) => (
+                  <span key={idx} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
+                    {t.trim()}
+                  </span>
+                ))
+              ) : (
+                <span className="text-sm text-gray-600">N/A</span>
+              )}
             </div>
 
             {/* Role */}
             <div className="flex flex-wrap gap-2 mt-3">
               <span className="text-sm font-medium">Role:</span>
               <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
-                {p?.role || "Role Not Available"  }
+                {/* {p?.role || "Role Not Available"  } */}
+                {p?.role || "N/A"  }
               </span>
             </div>
           </div>

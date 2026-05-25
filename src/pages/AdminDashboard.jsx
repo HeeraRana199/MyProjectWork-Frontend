@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { logout } from '../store/slices/authSlice';
-import { getAllCandidates, uploadExcel, registerLeader, clearLeaderRegistration, deleteCandidate, getIngestionLogs, getIngestionLogDetails, clearIngestionLogDetails } from '../store/slices/adminSlice';
+import { getAllCandidates, uploadExcel, registerLeader, clearLeaderRegistration, deleteCandidate, getIngestionLogs, getIngestionLogDetails, clearIngestionLogDetails, getAllLeaders, deleteLeader } from '../store/slices/adminSlice';
 import { FcComboChart, FcConferenceCall, FcDocument, FcUpload, FcBusinessman } from 'react-icons/fc';
 import { MdEmail, MdLock, MdVisibility, MdVisibilityOff, MdCheckCircle, MdError, MdDelete, MdWarning, MdCloudUpload, MdClose, MdListAlt, MdAddCircleOutline, MdSync, MdBlock, MdRefresh, MdSchema, MdReportProblem, MdInfoOutline, MdAccessTime } from 'react-icons/md';
-import { FaFileExcel } from 'react-icons/fa';
+import { FaFileExcel, FaPlus } from 'react-icons/fa';
 import ChangePasswordButton from '../components/ChangePasswordButton';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('upload');
+  // Tab state lives in the URL (?tab=trainees) so `navigate(-1)` from a
+  // talent card brings the user back to the same tab they came from.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'upload';
+  const setActiveTab = (tab) => setSearchParams({ tab }, { replace: true });
+
   const [currentPage, setCurrentPage] = useState(0);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -55,11 +60,11 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
+      <div className="w-64 bg-white shadow-lg flex flex-col flex-shrink-0 sticky top-0 h-screen">
         <div className="p-6">
           <h2 className="text-2xl font-bold text-gray-800">Admin Panel</h2>
         </div>
-        <nav className="mt-6">
+        <nav className="mt-6 flex-1">
           {menuItems.map((item) => (
             <button
               key={item.id}
@@ -76,7 +81,7 @@ const AdminDashboard = () => {
             </button>
           ))}
         </nav>
-        <div className="absolute bottom-0 w-64 p-6 space-y-2 bg-white border-t border-gray-100">
+        <div className="p-6 space-y-2 border-t border-gray-100">
           <ChangePasswordButton panelLabel="Admin Panel" />
           <button
             onClick={handleLogout}
@@ -89,7 +94,7 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-8">
-        {activeTab === 'upload' && <ExcelUpload />}
+        {activeTab === 'upload' && <ExcelUpload onViewLogs={() => setActiveTab('logs')} />}
         {activeTab === 'trainees' && (
           <TraineesList
             candidates={candidates}
@@ -134,7 +139,7 @@ const StatCard = ({ Icon, label, value, color }) => (
   </div>
 );
 
-const ExcelUpload = () => {
+const ExcelUpload = ({ onViewLogs }) => {
   const [file, setFile] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -304,12 +309,52 @@ const ExcelUpload = () => {
             <div className="flex-1">
               <h4 className="font-semibold text-red-800">Upload Failed</h4>
               <p className="text-sm text-red-700 mt-1">{apiErrorMessage}</p>
+
+              {/* Counts (when backend returned them) — shown before the error log */}
+              {(error?.totalRecords != null ||
+                error?.savedRecords != null ||
+                error?.mergedRecords != null ||
+                error?.rejectedRecords != null) && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                  <StatCard
+                    Icon={MdListAlt}
+                    label="Total"
+                    value={error.totalRecords}
+                    color={{ bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' }}
+                  />
+                  <StatCard
+                    Icon={MdAddCircleOutline}
+                    label="New / Saved"
+                    value={error.savedRecords}
+                    color={{ bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700' }}
+                  />
+                  <StatCard
+                    Icon={MdSync}
+                    label="Merged"
+                    value={error.mergedRecords}
+                    color={{ bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' }}
+                  />
+                  <StatCard
+                    Icon={MdBlock}
+                    label="Rejected"
+                    value={error.rejectedRecords}
+                    color={{ bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700' }}
+                  />
+                </div>
+              )}
+
               {apiErrorList.length > 0 && (
-                <ul className="list-disc list-inside text-sm text-red-700 mt-2 space-y-0.5">
-                  {apiErrorList.map((err, idx) => (
-                    <li key={idx}>{err}</li>
-                  ))}
-                </ul>
+                <p className="text-xs text-red-700 mt-3">
+                  See full error details in the{' '}
+                  <button
+                    type="button"
+                    onClick={onViewLogs}
+                    className="font-semibold underline underline-offset-2 hover:text-red-900"
+                  >
+                    Ingestion Logs
+                  </button>{' '}
+                  tab.
+                </p>
               )}
             </div>
           </div>
@@ -359,20 +404,22 @@ const ExcelUpload = () => {
             />
           </div>
 
-          {/* Inline errors from the result (rows that failed) */}
+          {/* Hint pointing to Ingestion Logs for row-level error details */}
           {uploadResult.errors && uploadResult.errors.length > 0 && (
-            <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <MdWarning className="text-amber-600" size="1.1em" />
-                <h5 className="text-sm font-semibold text-amber-800">
-                  {uploadResult.errors.length} row{uploadResult.errors.length > 1 ? 's' : ''} had issues
-                </h5>
+            <div className="mt-5 flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+              <div className="flex items-center gap-2 text-sm text-amber-900">
+                <MdWarning className="text-amber-600 shrink-0" size="1.1em" />
+                <span>
+                  {uploadResult.errors.length} row{uploadResult.errors.length > 1 ? 's' : ''} had issues — see details in Ingestion Logs.
+                </span>
               </div>
-              <ul className="list-disc list-inside text-sm text-amber-900 space-y-0.5 max-h-48 overflow-y-auto">
-                {uploadResult.errors.map((err, idx) => (
-                  <li key={idx}>{err}</li>
-                ))}
-              </ul>
+              <button
+                type="button"
+                onClick={onViewLogs}
+                className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-amber-900 bg-white border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-md"
+              >
+                <MdInfoOutline size="1em" /> View Logs
+              </button>
             </div>
           )}
         </div>
@@ -460,13 +507,13 @@ const TraineesList = ({ candidates, loading, onViewTalentCard, onDeleteCandidate
                       >
                         View Talent Card
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => setDeleteTarget(candidate)}
                         className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-md hover:bg-red-100 flex items-center gap-1"
                         title="Delete talent card"
                       >
                         <MdDelete size="1.1em" /> Delete
-                      </button>
+                      </button> */}
                     </div>
                   </td>
                 </tr>
@@ -555,27 +602,246 @@ const TraineesList = ({ candidates, loading, onViewTalentCard, onDeleteCandidate
 // Register Leader Component — Admin creates a new Leader account with email + password
 const RegisterLeader = () => {
   const dispatch = useDispatch();
-  const { leaderRegistrationLoading, leaderRegistrationError, leaderRegistrationResult } = useSelector(
-    (state) => state.admin
-  );
+  const {
+    leaderRegistrationLoading, leaderRegistrationError, leaderRegistrationResult,
+    leaders, leadersLoading, leadersError,
+    leaderDeletionLoading, leaderDeletionError,
+  } = useSelector((state) => state.admin);
 
-  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [validationError, setValidationError] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
+  // Fetch the leader list on mount; the modal handles its own form state below.
   useEffect(() => {
+    dispatch(getAllLeaders());
     return () => {
       dispatch(clearLeaderRegistration());
     };
   }, [dispatch]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setValidationError('');
-    if (leaderRegistrationError || leaderRegistrationResult) {
-      dispatch(clearLeaderRegistration());
+  // Refresh the list once a registration succeeds and close the modal.
+  // Keeps `leaderRegistrationResult` in state so the success banner stays
+  // visible until the admin dismisses it or opens the modal again.
+  useEffect(() => {
+    if (leaderRegistrationResult) {
+      dispatch(getAllLeaders());
+      setModalOpen(false);
     }
+  }, [leaderRegistrationResult, dispatch]);
+
+  // Auto-dismiss the success banner after 5 seconds so it doesn't linger.
+  useEffect(() => {
+    if (!leaderRegistrationResult) return;
+    const t = setTimeout(() => dispatch(clearLeaderRegistration()), 5000);
+    return () => clearTimeout(t);
+  }, [leaderRegistrationResult, dispatch]);
+
+  const openRegister = () => {
+    dispatch(clearLeaderRegistration());
+    setModalOpen(true);
+  };
+
+  const closeRegister = () => {
+    setModalOpen(false);
+    dispatch(clearLeaderRegistration());
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    // Close the modal now; reducer's .pending case already removed the row from
+    // the visible list, so the user sees instant feedback.
+    setDeleteTarget(null);
+    dispatch(deleteLeader(target.userId)).then((result) => {
+      if (result.meta.requestStatus === 'rejected') {
+        // Server rejected the delete — refetch to bring the row back.
+        dispatch(getAllLeaders());
+      }
+    });
+  };
+
+  return (
+    <div className="max-w-4xl">
+      {/* Header with Register button on the right */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <FcBusinessman size="1.2em" /> Leaders
+          </h3>
+          <p className="text-sm text-gray-500 mt-1">
+            All active Leader accounts. Use Register to create a new one.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={openRegister}
+          className="flex items-center gap-1.5 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 shadow-sm shrink-0"
+        >
+          <FaPlus size="0.85em" /> Register
+        </button>
+      </div>
+
+      {/* Success banner — shown after a leader is successfully created */}
+      {leaderRegistrationResult && (
+        <div className="flex items-start gap-2 p-3 mb-4 bg-green-50 border border-green-200 rounded-md">
+          <MdCheckCircle className="text-green-600 mt-0.5 shrink-0" size="1.2em" />
+          <div className="flex-1 text-sm text-green-700">
+            <p className="font-semibold">Leader account created successfully.</p>
+            {leaderRegistrationResult.email && (
+              <p className="text-xs mt-0.5">
+                Email: <span className="font-medium">{leaderRegistrationResult.email}</span>
+                {leaderRegistrationResult.role && (
+                  <> · Role: <span className="font-medium">{leaderRegistrationResult.role}</span></>
+                )}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => dispatch(clearLeaderRegistration())}
+            className="text-green-700 hover:text-green-900 shrink-0"
+            aria-label="Dismiss"
+          >
+            <MdClose size="1.2em" />
+          </button>
+        </div>
+      )}
+
+      {/* Leader count + refresh */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+          {leaders.length} {leaders.length === 1 ? 'leader' : 'leaders'}
+        </span>
+        <button
+          type="button"
+          onClick={() => dispatch(getAllLeaders())}
+          disabled={leadersLoading}
+          className="flex items-center gap-1.5 text-sm font-medium border border-gray-300 rounded-md px-3 py-1.5 hover:bg-gray-50 disabled:opacity-50"
+          title="Refresh"
+        >
+          <MdRefresh size="1.1em" /> Refresh
+        </button>
+      </div>
+
+      {/* Leaders table */}
+      <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-100">
+        {leadersLoading ? (
+          <div className="text-center py-8 text-gray-500">Loading leaders…</div>
+        ) : leadersError ? (
+          <div className="text-center py-8 text-red-600">
+            {typeof leadersError === 'string' ? leadersError : 'Failed to load leaders'}
+          </div>
+        ) : leaders.length === 0 ? (
+          <div className="text-center py-10 text-gray-500">
+            <FcBusinessman size="2.5em" className="mx-auto mb-2 opacity-70" />
+            <p className="text-sm">No leaders yet. Click <span className="font-semibold text-indigo-700">Register</span> to create one.</p>
+          </div>
+        ) : (
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">S.No</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {leaders.map((l, idx) => (
+                <tr key={l.userId} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm font-medium text-gray-700">{idx + 1}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">{l.email}</td>
+                  <td className="px-4 py-3 text-sm">
+                    <span className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                      {l.role?.replace('ROLE_', '') || 'LEADER'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-right">
+                    <button
+                      onClick={() => setDeleteTarget(l)}
+                      className="inline-flex items-center gap-1 text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md text-xs font-medium"
+                      title="Delete this leader"
+                    >
+                      <MdDelete size="1.1em" /> Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Registration modal */}
+      {modalOpen && (
+        <RegisterLeaderModal
+          loading={leaderRegistrationLoading}
+          error={leaderRegistrationError}
+          onClose={closeRegister}
+        />
+      )}
+
+      {/* Soft-delete confirmation modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="bg-red-100 rounded-full p-2 shrink-0">
+                <MdWarning className="text-red-600" size="1.6em" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 text-lg">Delete Leader?</h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  <span className="font-medium">{deleteTarget.email}</span> will be permanently deleted from the
+                  database. They will no longer be able to log in, and this action cannot be undone.
+                </p>
+                {leaderDeletionError && (
+                  <p className="mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1">
+                    {leaderDeletionError}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={leaderDeletionLoading}
+                className="px-4 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={leaderDeletionLoading}
+                className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center gap-1.5"
+              >
+                <MdDelete size="1.1em" />
+                {leaderDeletionLoading ? 'Removing…' : 'Remove Leader'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Modal containing the existing email + password form. Same validation rules
+ * and behavior as the prior inline form, just lifted into a popup. On a successful
+ * submission, the parent closes it and refreshes the leader list.
+ */
+const RegisterLeaderModal = ({ loading, error, onClose }) => {
+  const dispatch = useDispatch();
+  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [validationError, setValidationError] = useState('');
+
+  const handleChange = (e) => {
+    setFormData((f) => ({ ...f, [e.target.name]: e.target.value }));
+    if (validationError) setValidationError('');
+    if (error) dispatch(clearLeaderRegistration());
   };
 
   const handleSubmit = async (e) => {
@@ -597,22 +863,36 @@ const RegisterLeader = () => {
       return;
     }
 
-    const result = await dispatch(registerLeader({ email, password }));
-    if (result.meta.requestStatus === 'fulfilled') {
-      setFormData({ email: '', password: '', confirmPassword: '' });
-    }
+    dispatch(registerLeader({ email, password }));
+    // Parent's useEffect on leaderRegistrationResult will close the modal + refresh.
   };
 
   return (
-    <div className="max-w-2xl">
-      <h3 className="text-2xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-        <FcBusinessman size="1.2em" /> Register Leader
-      </h3>
-      <p className="text-sm text-gray-500 mb-6">
-        Create a new Leader account. Leaders can search and filter candidates from the Leader Panel.
-      </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Register Leader"
+      >
+        <div className="flex items-start justify-between mb-1">
+          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <FcBusinessman size="1.2em" /> Register Leader
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Close"
+          >
+            <MdClose size="1.4em" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mb-5">
+          Create a new Leader account. They can search and filter candidates from the Leader Panel.
+        </p>
 
-      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email */}
           <div>
@@ -686,36 +966,32 @@ const RegisterLeader = () => {
           </div>
 
           {/* Validation / API error */}
-          {(validationError || leaderRegistrationError) && (
+          {(validationError || error) && (
             <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
               <MdError className="text-red-500 mt-0.5 shrink-0" size="1.2em" />
               <p className="text-sm text-red-700">
-                {validationError || leaderRegistrationError}
+                {validationError || error}
               </p>
             </div>
           )}
 
-          {/* Success */}
-          {leaderRegistrationResult && (
-            <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
-              <MdCheckCircle className="text-green-600 mt-0.5 shrink-0" size="1.2em" />
-              <div className="text-sm text-green-700">
-                <p className="font-semibold">Leader registered successfully.</p>
-                <p className="text-xs mt-0.5">
-                  Email: <span className="font-medium">{leaderRegistrationResult.email}</span> · Role:{' '}
-                  <span className="font-medium">{leaderRegistrationResult.role}</span>
-                </p>
-              </div>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={leaderRegistrationLoading}
-            className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-          >
-            {leaderRegistrationLoading ? 'Creating leader…' : 'Create Leader Account'}
-          </button>
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+            >
+              {loading ? 'Creating…' : 'Create Leader Account'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -881,6 +1157,17 @@ const IngestionLogDetailsModal = ({ loading, payload, onClose }) => {
   const dataErrors = errors.filter((e) => e.errorType === 'DATA');
   const processingErrors = errors.filter((e) => e.errorType === 'PROCESSING');
 
+  // Synthetic schema fallback — for logs where the schema-level reason is only
+  // stored on the IngestionLog itself (no per-column IngestionError rows). Covers
+  // both legacy logs and the generic "Required columns are missing" path.
+  const schemaFallbackMessage =
+    schemaErrors.length === 0 &&
+    log?.status === 'FAILED' &&
+    log?.schemaValidationMessage &&
+    log.schemaValidationMessage !== 'Schema validation passed'
+      ? log.schemaValidationMessage
+      : null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -924,20 +1211,27 @@ const IngestionLogDetailsModal = ({ loading, payload, onClose }) => {
                 </div>
               )}
 
-              {schemaErrors.length > 0 && (
+              {(schemaErrors.length > 0 || schemaFallbackMessage) && (
                 <ErrorGroup
-                  title="Schema validation — missing column(s)"
+                  title="Schema validation"
                   Icon={MdSchema}
                   iconClass="text-rose-600"
                   containerClass="border-rose-200 bg-rose-50"
                 >
                   <ul className="text-sm text-rose-900 space-y-1">
-                    {schemaErrors.map((e) => (
-                      <li key={e.id} className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                        <span className="font-medium">{e.columnName || '—'}</span>
+                    {schemaErrors.length > 0 ? (
+                      schemaErrors.map((e) => (
+                        <li key={e.id} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
+                          <span className="font-medium">{e.columnName || e.errorReason || '—'}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
+                        <span className="font-medium">{schemaFallbackMessage}</span>
                       </li>
-                    ))}
+                    )}
                   </ul>
                 </ErrorGroup>
               )}
@@ -1004,7 +1298,7 @@ const IngestionLogDetailsModal = ({ loading, payload, onClose }) => {
                 </ErrorGroup>
               )}
 
-              {schemaErrors.length === 0 && dataErrors.length === 0 && processingErrors.length === 0 && !loading && (
+              {schemaErrors.length === 0 && dataErrors.length === 0 && processingErrors.length === 0 && !schemaFallbackMessage && !loading && (
                 <div className="text-center py-8 text-gray-500">No detailed errors recorded.</div>
               )}
             </>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { logout } from '../store/slices/authSlice';
 import {
   filterCandidates,
@@ -26,7 +26,12 @@ const SKILL_TYPES = [
 ];
 
 const LeaderDashboard = () => {
-  const [activeTab, setActiveTab] = useState('search');
+  // Tab state lives in the URL (?tab=all) so `navigate(-1)` from a talent card
+  // brings the leader back to the same tab they came from.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'search';
+  const setActiveTab = (tab) => setSearchParams({ tab }, { replace: true });
+
   const [currentPage, setCurrentPage] = useState(0);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -171,11 +176,11 @@ const LeaderDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
+      <div className="w-64 bg-white shadow-lg flex flex-col flex-shrink-0 sticky top-0 h-screen">
         <div className="p-6">
           <h2 className="text-2xl font-bold text-gray-800">Leader Panel</h2>
         </div>
-        <nav className="mt-6">
+        <nav className="mt-6 flex-1">
           <button
             onClick={() => setActiveTab('search')}
             className={`w-full flex items-center px-6 py-3 text-left hover:bg-gray-100 ${
@@ -195,7 +200,7 @@ const LeaderDashboard = () => {
             <p className="ml-3">All Candidates</p>
           </button>
         </nav>
-        <div className="absolute bottom-0 w-64 p-6 space-y-2 bg-white border-t border-gray-100">
+        <div className="p-6 space-y-2 border-t border-gray-100">
           <ChangePasswordButton panelLabel="Leader Panel" />
           <button
             onClick={handleLogout}

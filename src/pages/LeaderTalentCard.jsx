@@ -23,7 +23,7 @@ const LeaderTalentCard = () => {
       candidate={currentCandidate}
       loading={loading}
       error={error}
-      onBack={() => navigate('/leader/dashboard')}
+      onBack={() => navigate(-1)}
     />
   );
 };

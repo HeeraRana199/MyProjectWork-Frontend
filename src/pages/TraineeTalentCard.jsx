@@ -27,7 +27,7 @@ const TraineeTalentCard = ({ associateIdOverride }) => {
       candidate={currentCandidate}
       loading={loading}
       error={error}
-      onBack={associateIdOverride ? undefined : () => navigate('/trainee/dashboard')}
+      onBack={associateIdOverride ? undefined : () => navigate(-1)}
     />
   );
 };

@@ -13,16 +13,26 @@ const getAuthHeaders = () => ({
 const parseApiError = (errorData) => {
   if (!errorData) return 'Failed to upload Excel';
   if (typeof errorData === 'string') return errorData;
+  // Preserve any row counts the backend sent back on the failure path so the UI
+  // can show "x saved / y merged / z rejected" alongside the error list.
+  const counts = {
+    totalRecords: errorData.totalRecords,
+    savedRecords: errorData.savedRecords,
+    mergedRecords: errorData.mergedRecords,
+    rejectedRecords: errorData.rejectedRecords,
+  };
   if (Array.isArray(errorData.errors)) {
     return {
       message: errorData.schemaValidationMessage || 'Upload validation failed',
       errors: errorData.errors,
+      ...counts,
     };
   }
   if (errorData.message) {
     return {
       message: errorData.message,
       errors: errorData.errors || [],
+      ...counts,
     };
   }
   return JSON.stringify(errorData);
@@ -80,6 +90,41 @@ export const deleteCandidate = createAsyncThunk(
       return { associateId, message: response.data };
     } catch (error) {
       return rejectWithValue(error.response?.data || 'Failed to delete candidate');
+    }
+  }
+);
+
+// Fetch all active leaders (admin only)
+export const getAllLeaders = createAsyncThunk(
+  'admin/getAllLeaders',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/admin/leaders`, {
+        headers: getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to fetch leaders');
+    }
+  }
+);
+
+// Soft-delete a leader (sets active=false on the server). Admin only.
+export const deleteLeader = createAsyncThunk(
+  'admin/deleteLeader',
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/admin/leader/${userId}`, {
+        headers: getAuthHeaders(),
+      });
+      return { userId, message: response.data?.message || 'Leader deactivated' };
+    } catch (error) {
+      const data = error.response?.data;
+      const message =
+        typeof data === 'string'
+          ? data
+          : data?.message || 'Failed to deactivate leader';
+      return rejectWithValue(message);
     }
   }
 );
@@ -165,6 +210,11 @@ const adminSlice = createSlice({
     leaderRegistrationResult: null,
     leaderRegistrationError: null,
     leaderRegistrationLoading: false,
+    leaders: [],
+    leadersLoading: false,
+    leadersError: null,
+    leaderDeletionLoading: false,
+    leaderDeletionError: null,
     ingestionLogs: [],
     ingestionLogsLoading: false,
     ingestionLogDetails: null,
@@ -257,6 +307,34 @@ const adminSlice = createSlice({
       .addCase(registerLeader.rejected, (state, action) => {
         state.leaderRegistrationLoading = false;
         state.leaderRegistrationError = action.payload;
+      })
+      .addCase(getAllLeaders.pending, (state) => {
+        state.leadersLoading = true;
+        state.leadersError = null;
+      })
+      .addCase(getAllLeaders.fulfilled, (state, action) => {
+        state.leadersLoading = false;
+        state.leaders = action.payload || [];
+      })
+      .addCase(getAllLeaders.rejected, (state, action) => {
+        state.leadersLoading = false;
+        state.leadersError = action.payload;
+      })
+      .addCase(deleteLeader.pending, (state, action) => {
+        state.leaderDeletionLoading = true;
+        state.leaderDeletionError = null;
+        // Optimistic remove — drop the leader from the visible list the instant
+        // the click happens. action.meta.arg is the userId passed to the thunk.
+        // If the API call later fails (.rejected), the calling component refetches
+        // the list to restore the row.
+        state.leaders = state.leaders.filter((l) => l.userId !== action.meta.arg);
+      })
+      .addCase(deleteLeader.fulfilled, (state) => {
+        state.leaderDeletionLoading = false;
+      })
+      .addCase(deleteLeader.rejected, (state, action) => {
+        state.leaderDeletionLoading = false;
+        state.leaderDeletionError = action.payload;
       })
       .addCase(deleteCandidate.pending, (state) => {
         state.loading = true;

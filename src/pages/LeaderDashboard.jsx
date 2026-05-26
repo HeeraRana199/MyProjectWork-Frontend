@@ -1,20 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../store/slices/authSlice';
 import {
   filterCandidates,
   exportFilteredCandidates,
+  fetchAllTalentCardsData,
   addSkillChip,
   removeSkillChip,
   setFilterField,
   clearFilters,
+  clearTalentCardsData,
 } from '../store/slices/leaderSlice';
+import TalentCard from '../components/talent-card/TalentCard';
 import { FcConferenceCall, FcFilledFilter } from 'react-icons/fc';
 import ChangePasswordButton from '../components/ChangePasswordButton';
 import { FaCode, FaTools, FaLayerGroup, FaCertificate, FaUsers, FaIdBadge } from 'react-icons/fa';
 import { FaLocationDot } from 'react-icons/fa6';
-import { MdClose, MdSearch, MdRestartAlt, MdFileDownload } from 'react-icons/md';
+import { MdClose, MdSearch, MdRestartAlt, MdFileDownload, MdPictureAsPdf } from 'react-icons/md';
 
 const SKILL_TYPES = [
   { key: 'programmingSkills', label: 'Programming', Icon: FaCode, color: 'bg-blue-100 text-blue-700 border-blue-300', dot: 'bg-blue-500' },
@@ -27,8 +30,99 @@ const LeaderDashboard = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { candidates, filters, loading, exporting, pagination } = useSelector((state) => state.leader);
+  const cardsContainerRef = useRef(null);
+  const [generatingZip, setGeneratingZip] = useState(false);
+  const { candidates, filters, loading, exporting, downloadingCards, allTalentCardsData, pagination } = useSelector((state) => state.leader);
   const { role } = useSelector((state) => state.auth);
+
+  const generateZip = useCallback(async () => {
+    if (!cardsContainerRef.current || allTalentCardsData.length === 0) return;
+    setGeneratingZip(true);
+    try {
+      const [{ default: html2canvas }, { jsPDF }, { default: JSZip }] = await Promise.all([
+        import('html2canvas-pro'),
+        import('jspdf'),
+        import('jszip'),
+      ]);
+
+      // Replace all cross-origin images with local fallback before capture
+      const container = cardsContainerRef.current;
+      const images = container.querySelectorAll('img');
+      await Promise.all(
+        Array.from(images).map(
+          (img) =>
+            new Promise((resolve) => {
+              if (img.complete) {
+                if (img.naturalWidth === 0) img.src = '/profile_photos/profile1.avif';
+                resolve();
+              } else {
+                img.onload = resolve;
+                img.onerror = () => {
+                  img.src = '/profile_photos/profile1.avif';
+                  resolve();
+                };
+              }
+            })
+        )
+      );
+
+      const zip = new JSZip();
+      const cardElements = container.querySelectorAll('[data-talent-card]');
+      let generated = 0;
+
+      for (let i = 0; i < cardElements.length; i++) {
+        const el = cardElements[i];
+        const associateId = el.getAttribute('data-talent-card');
+        const name = allTalentCardsData[i]?.candidateName || associateId;
+
+        try {
+          const canvas = await html2canvas(el, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+          });
+          const imgData = canvas.toDataURL('image/jpeg', 0.8);
+
+          const pdfWidth = 210;
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          const pdf = new jsPDF({
+            orientation: pdfHeight > pdfWidth ? 'p' : 'l',
+            unit: 'mm',
+            format: [pdfWidth, pdfHeight],
+          });
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+          const fileName = `${associateId}_${name.replace(/[^a-zA-Z0-9]/g, '_')}_Talent_Card.pdf`;
+          zip.file(fileName, pdf.output('blob'));
+          generated++;
+        } catch (cardErr) {
+          console.warn(`Skipped card for ${associateId}:`, cardErr);
+        }
+      }
+
+      if (generated === 0) {
+        alert('Could not generate any talent card PDFs.');
+        return;
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Talent_Cards_${Date.now()}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to generate talent card PDFs:', err);
+      alert('Failed to generate talent card PDFs. Check console for details.');
+    } finally {
+      setGeneratingZip(false);
+      dispatch(clearTalentCardsData());
+    }
+  }, [allTalentCardsData, dispatch]);
 
   useEffect(() => {
     if (role !== 'ROLE_LEADER' && role !== 'ROLE_ADMIN') {
@@ -56,6 +150,18 @@ const LeaderDashboard = () => {
   const handleExportCSV = () => {
     dispatch(exportFilteredCandidates({ filters }));
   };
+
+  const handleDownloadAllTalentCards = () => {
+    console.log('Download Talent Cards clicked, candidates:', candidates.length);
+    dispatch(fetchAllTalentCardsData({ filters }));
+  };
+
+  useEffect(() => {
+    if (allTalentCardsData.length > 0 && !downloadingCards) {
+      const timer = setTimeout(() => generateZip(), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [allTalentCardsData, downloadingCards, generateZip]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -106,15 +212,26 @@ const LeaderDashboard = () => {
           <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <FcFilledFilter size="1.2em" /> Candidate Search & Filter
           </h3>
-          <button
-            onClick={handleExportCSV}
-            disabled={exporting || candidates.length === 0}
-            title={candidates.length === 0 ? 'No candidates to export' : 'Download CSV of all matching candidates'}
-            className="flex items-center gap-1.5 bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-          >
-            <MdFileDownload size="1.2em" />
-            {exporting ? 'Exporting…' : 'Export CSV'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownloadAllTalentCards}
+              disabled={downloadingCards || generatingZip || candidates.length === 0}
+              title={candidates.length === 0 ? 'No candidates to download' : 'Download all matching talent cards as individual PDFs in a ZIP'}
+              className="flex items-center gap-1.5 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              <MdPictureAsPdf size="1.2em" />
+              {downloadingCards ? 'Fetching Data…' : generatingZip ? 'Generating PDFs…' : 'Download Talent Cards'}
+            </button>
+            <button
+              onClick={handleExportCSV}
+              disabled={exporting || candidates.length === 0}
+              title={candidates.length === 0 ? 'No candidates to export' : 'Download CSV of all matching candidates'}
+              className="flex items-center gap-1.5 bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              <MdFileDownload size="1.2em" />
+              {exporting ? 'Exporting…' : 'Export CSV'}
+            </button>
+          </div>
         </div>
 
         <FilterPanel
@@ -136,6 +253,25 @@ const LeaderDashboard = () => {
           onView={(id) => navigate(`/leader/talent-card/${id}`)}
         />
       </div>
+
+      {/* Off-screen container for html2canvas capture */}
+      {allTalentCardsData.length > 0 && (
+        <div style={{ position: 'absolute', left: '-9999px', top: 0, width: '1280px' }}>
+          <div ref={cardsContainerRef}>
+            {allTalentCardsData.map((candidate) => (
+              <div key={candidate.associateId} data-talent-card={candidate.associateId}>
+                <TalentCard
+                  role="leader"
+                  associateId={candidate.associateId}
+                  candidate={candidate}
+                  loading={false}
+                  error={null}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

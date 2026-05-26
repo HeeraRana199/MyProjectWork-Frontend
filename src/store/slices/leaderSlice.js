@@ -79,6 +79,44 @@ export const exportFilteredCandidates = createAsyncThunk(
   }
 );
 
+export const fetchAllTalentCardsData = createAsyncThunk(
+  'leader/fetchAllTalentCardsData',
+  async ({ filters = {} } = {}, { rejectWithValue }) => {
+    const safe = sanitizeFilters(filters);
+    try {
+      const params = new URLSearchParams();
+      safe.programmingSkills.filter(Boolean).forEach((s) => params.append('programmingSkills', s));
+      safe.toolSkills.filter(Boolean).forEach((s) => params.append('toolSkills', s));
+      safe.frameworkSkills.filter(Boolean).forEach((s) => params.append('frameworkSkills', s));
+      if (safe.certificate) params.append('certificate', safe.certificate);
+      if (safe.cohortCode) params.append('cohortCode', safe.cohortCode);
+      if (safe.deploymentLocation) params.append('deploymentLocation', safe.deploymentLocation);
+      safe.associateId.forEach((id) => params.append('associateId', id));
+      params.append('page', 0);
+      params.append('pageSize', 10000);
+
+      const headers = getAuthHeaders();
+      const listResponse = await axios.get(
+        `${API_BASE_URL}/leader/candidates/filter?${params.toString()}`,
+        { headers }
+      );
+      const candidates = listResponse.data.content || [];
+      if (candidates.length === 0) return [];
+
+      const fullData = await Promise.all(
+        candidates.map((c) =>
+          axios
+            .get(`${API_BASE_URL}/leader/candidate?id=${c.associateId}`, { headers })
+            .then((res) => ({ ...res.data, associateId: c.associateId }))
+        )
+      );
+      return fullData;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to fetch talent cards data');
+    }
+  }
+);
+
 export const filterCandidates = createAsyncThunk(
   'leader/filterCandidates',
   async ({ filters = {}, page = 0, pageSize } = {}, { rejectWithValue }) => {
@@ -125,6 +163,9 @@ const leaderSlice = createSlice({
     loading: false,
     exporting: false,
     exportError: null,
+    downloadingCards: false,
+    downloadCardsError: null,
+    allTalentCardsData: [],
     error: null,
     pagination: {
       currentPage: 0,
@@ -157,6 +198,9 @@ const leaderSlice = createSlice({
     },
     clearFilters: (state) => {
       state.filters = initialFilters;
+    },
+    clearTalentCardsData: (state) => {
+      state.allTalentCardsData = [];
     },
   },
   extraReducers: (builder) => {
@@ -204,9 +248,22 @@ const leaderSlice = createSlice({
       .addCase(exportFilteredCandidates.rejected, (state, action) => {
         state.exporting = false;
         state.exportError = action.payload;
+      })
+      .addCase(fetchAllTalentCardsData.pending, (state) => {
+        state.downloadingCards = true;
+        state.downloadCardsError = null;
+        state.allTalentCardsData = [];
+      })
+      .addCase(fetchAllTalentCardsData.fulfilled, (state, action) => {
+        state.downloadingCards = false;
+        state.allTalentCardsData = action.payload;
+      })
+      .addCase(fetchAllTalentCardsData.rejected, (state, action) => {
+        state.downloadingCards = false;
+        state.downloadCardsError = action.payload;
       });
   },
 });
 
-export const { addSkillChip, removeSkillChip, setFilterField, clearFilters } = leaderSlice.actions;
+export const { addSkillChip, removeSkillChip, setFilterField, clearFilters, clearTalentCardsData } = leaderSlice.actions;
 export default leaderSlice.reducer;

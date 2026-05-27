@@ -1218,6 +1218,16 @@ const IngestionLogDetailsModal = ({ loading, payload, onClose }) => {
                   iconClass="text-rose-600"
                   containerClass="border-rose-200 bg-rose-50"
                 >
+                  {schemaErrors.length > 0 && log?.schemaValidationMessage && (
+                    <p className="text-sm font-medium text-rose-900 mb-2">
+                      {log.schemaValidationMessage}
+                    </p>
+                  )}
+                  {schemaErrors.length > 0 && (
+                    <p className="text-xs font-semibold uppercase tracking-wide text-rose-800/80 mb-1">
+                      Missing column{schemaErrors.length > 1 ? 's' : ''} ({schemaErrors.length})
+                    </p>
+                  )}
                   <ul className="text-sm text-rose-900 space-y-1">
                     {schemaErrors.length > 0 ? (
                       schemaErrors.map((e) => (
